@@ -1,9 +1,8 @@
 #ifndef ABI_H
 #define ABI_H
 
+#include <nlohmann/json.hpp>
 #include <string>
-
-#include <nlohmann/json>
 
 using json = nlohmann::ordered_json;
 
@@ -11,7 +10,7 @@ using json = nlohmann::ordered_json;
 // https://web3js.readthedocs.io/en/v1.7.0/web3-eth-abi.html
 
 // TODO:
-// - Check if "array" types would actually be "mixed"
+// - Check if "array" types would actually bes "mixed"
 //   - Docs sometimes shows examples using only strings, other times with ints mixed in
 
 class ABI {

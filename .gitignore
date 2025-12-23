@@ -5,3 +5,4 @@ build/
 include/web3cpp/version.h
 docs/
 deps/
+.cache

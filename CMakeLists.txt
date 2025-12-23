@@ -5,6 +5,7 @@ include(FetchContent)
 # Map current configuration to configurations of imported targets.
 set(CMAKE_MAP_IMPORTED_CONFIG_DEBUG Release)
 set(CMAKE_MAP_IMPORTED_CONFIG_RELWITHDEBINFO Release)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # Include cable
 include(cmake/cable/bootstrap.cmake)
@@ -42,11 +43,7 @@ set(Boost_USE_MULTITHREADED ON)
 set(FETCHCONTENT_BASE_DIR "${CMAKE_BINARY_DIR}/deps") # "deps", not "_deps"
 find_package(Boost REQUIRED filesystem system thread)
 find_package(OpenSSL REQUIRED)
-message("Fetching nlohmann/json...")
-FetchContent_Declare(json 
-                      URL https://github.com/nlohmann/json/releases/download/v3.10.5/json.tar.xz
-                      DOWNLOAD_EXTRACT_TIMESTAMP 1)
-FetchContent_MakeAvailable(json)
+find_package(nlohmann_json)
 
 # Build catch2 to a library.
 add_library(catch2
@@ -91,7 +88,7 @@ if(NOT TOOLBOX_FOUND)
   find_package(Toolbox)
 endif()
 
-find_package(Bip3x)
+find_package(bip3x)
 if(NOT BIP3X_FOUND)
   message(WARNING "Bip3x not found, compiling from source.")
   include(ProjectBip3x)

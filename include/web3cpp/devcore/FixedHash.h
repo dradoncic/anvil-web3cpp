@@ -175,7 +175,7 @@ public:
 		ret.CreatePrivFromString(my_passphrase);
 		return ret;
     }
-	
+
 	static FixedHash frombip3x(bip3x::bytes_array<32> bip32) {
 		FixedHash ret;
 		ret.CreateFromBip3x(bip32);

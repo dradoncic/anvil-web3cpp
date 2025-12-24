@@ -24,7 +24,7 @@ class Account {
   private:
     std::string _address;                                        ///< Address for the account.
     std::string _name;                                           ///< Custom name/label for the account.
-    std::string _derivationKey;                                  ///< Derivation key for the account..
+    std::string _privateKey;                                     ///< Private key for the account..
     uint64_t _nonce;                                             ///< Current nonce for the account.
     const std::unique_ptr<Provider>& provider;                   ///< Pointer to Web3::defaultProvider.
 
@@ -34,7 +34,7 @@ class Account {
      * Default constructor.
      * @param name Custom name/label for the account.
      * @param __address Address for the account.
-     * @param __derivationPath Full derivation path for the account (e.g. `m/44'/60'/0'/0`).
+     * @param __privateKey Full private key for the account.
      * @param __isLedger Flag to set whether the account comes from a Ledger device or not.
      * @param *_provider Pointer to the provider used by the account.
      */
@@ -47,7 +47,7 @@ class Account {
     Account(const Account& other) noexcept :
       _address(other._address),
       _name(other._name),
-      _derivationKey(other._derivationKey),
+      _privateKey(other._privateKey),
       _nonce(other._nonce),
       provider(other.provider)
     {}
@@ -56,14 +56,14 @@ class Account {
     Account(const std::unique_ptr<Account>& other) noexcept :
       _address(other->_address),
       _name(other->_name),
-      _derivationKey(other->_derivationKey),
+      _privateKey(other->_privateKey),
       _nonce(other->_nonce),
       provider(other->provider)
     {}
 
     const std::string& address()        const { return _address; }           ///< Getter for the address.
     const std::string& name()           const { return _name; }              ///< Getter for the custom name/label.
-    const std::string& derivationKey()  const { return _derivationKey; }       ///< Getter for the private key..
+    const std::string& privateKey()     const { return _privateKey; }       ///< Getter for the private key..
     const uint64_t& nonce()             const { return _nonce; }             ///< Getter for the nonce.
 
     /**

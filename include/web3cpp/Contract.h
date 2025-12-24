@@ -7,7 +7,6 @@
 #include <web3cpp/devcore/Common.h>
 #include <web3cpp/devcore/FixedHash.h>
 #include <web3cpp/devcore/Address.h>
-#include <web3cpp/ethcore/KeyManager.h>
 #include <web3cpp/ethcore/TransactionBase.h>
 
 #include <web3cpp/Utils.h>

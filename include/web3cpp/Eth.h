@@ -231,6 +231,33 @@ class Eth {
     );
 
     /**
+     * Drop transaction from the mempool.
+     * @param transactionHash The transaction hash
+     * @return The hash of transaction that was canceled.
+     */
+    std::future<json> dropTransaction(const std::string& transactionHash);
+
+    /**
+     * Drop all transactions from the mempool.
+     * @return A JSON object with the send results (either "result" or "error")
+     */
+    std::future<json> dropAllTransactions();
+
+    /**
+     * Set minimum gas price.
+     * @param gas The amount of gas (WEI)
+     * @return A JSON object with the send results (either "result" or "error")
+     */
+    std::future<json> setMinGasPrice(BigNumber gas);
+
+    /**
+     * Set next block base fee per gas.
+     * @param The amount of gas (WEI)
+     * @return A JSON object with the send results (either "result" or "error")
+     */
+    std::future<json> setNextBlockBaseFeePerGas(BigNumber gas);
+
+    /**
      * Sign data using a specific account.
      * @param dataToSign Data to be signed. If it's a non-hex string, it will be
      *                   converted to hex internally.
@@ -240,8 +267,8 @@ class Eth {
     std::future<json> sign(std::string dataToSign, const std::string& address);
 
     /**
-     * Sign a transaction. 
-     * @param txObj The transaction data to sign.
+     * Sign a transaction.
+     * @param tx Obj The transaction data to sign.
      * @return The RLP encoded transaction.
      */
     std::future<json> signTransaction(const json& txObj);
@@ -289,6 +316,18 @@ class Eth {
     std::future<json> submitWork(
       std::string nonce, std::string powHash, std::string digest
     );
+
+    /**
+     * Fetch number of transactions currently pending for inclusion in the next block.
+     * @return Pending & queued counter of transactions.
+     */
+    std::future<json> txPoolStatus();
+
+    /**
+     * List the exact details of all the transactions currently pending for inclusion in the next block.
+     * @return Pending & queued list of transactions.
+     */
+    std::future<json> txPoolContent();
 
     /**
      * Get the chain ID of the current provider.

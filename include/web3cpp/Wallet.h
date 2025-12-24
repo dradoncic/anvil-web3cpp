@@ -35,7 +35,7 @@ using json = nlohmann::ordered_json;
  * Abstraction for a single wallet.
  */
 
-static const std::unique_ptr<Account> NullAccount = nullptr; 
+static const std::unique_ptr<Account> NullAccount = nullptr;
 
 class Wallet {
   private:
@@ -50,7 +50,7 @@ class Wallet {
     std::string _password;                              ///< In-memory plain text copy of the wallet's password. Set by the user when they want to "remember" the password.
     std::time_t _passEnd;                               ///< Timestamp after which the password will be "forgotten"/erased from memory.
     std::thread _passThread;                            ///< Thread object that runs passHandler().
-    std::vector<std::unique_ptr<Account>> accountList;  ///< List of accounts loaded in this wallet. vector is modified on constructor (load from DB) and createNew 
+    std::vector<std::unique_ptr<Account>> accountList;  ///< List of accounts loaded in this wallet. vector is modified on constructor (load from DB) and createNew
 
     /// Get the wallet's "wallet.info" file path. Usually used to check if the wallet exists.
     boost::filesystem::path walletExistsPath() { return path.string() + "/wallet.info"; };
@@ -239,6 +239,31 @@ class Wallet {
      *         and the transaction's raw signature.
      */
     std::future<json> sendTransaction(std::string signedTx, Error &err);
+
+    /**
+     * Add balance to the account (ETH).
+     * @param amount The amount of ETH
+     * @param $err Error object
+     * @return A JSON object with the send results (either "result" or "error")
+     */
+     std::future<json> addBalance(BigNumber amount, Error &err);
+
+    /**
+     * Set balance to the account (ETH).
+     * @param amount The amount of ETH
+     * @param $err Error object
+     * @return A JSON object with the send results (either "result" or "error")
+     */
+    std::future<json> setBalance(BigNumber amount, Error &err);
+
+    /**
+     * Deal ERC-20 to the account.
+     * @param tokenAddress The ERC-20 smart contract address
+     * @param amount The amount of ERC-20
+     * @param $err Error object
+     * @return A JSON object with the send results (either "result" or "error")
+     */
+    std::future<json> dealERC20(dev::Address tokenAddress, BigNumber amount, Error &err);
 
     /**
      * Store the wallet's password in memory.

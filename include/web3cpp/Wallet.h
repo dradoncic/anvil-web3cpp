@@ -20,11 +20,9 @@
 #include <web3cpp/devcore/Common.h>
 #include <web3cpp/devcore/FixedHash.h>
 #include <web3cpp/devcore/Address.h>
-#include <web3cpp/ethcore/KeyManager.h>
 #include <web3cpp/ethcore/TransactionBase.h>
 #include <web3cpp/Error.h>
 #include <web3cpp/Account.h>
-#include <web3cpp/DB.h>
 #include <web3cpp/Cipher.h>
 #include <web3cpp/Bip39.h>
 #include <web3cpp/Provider.h>
@@ -239,31 +237,6 @@ class Wallet {
      *         and the transaction's raw signature.
      */
     std::future<json> sendTransaction(std::string signedTx, Error &err);
-
-    /**
-     * Add balance to the account (ETH).
-     * @param amount The amount of ETH
-     * @param $err Error object
-     * @return A JSON object with the send results (either "result" or "error")
-     */
-     std::future<json> addBalance(BigNumber amount, Error &err);
-
-    /**
-     * Set balance to the account (ETH).
-     * @param amount The amount of ETH
-     * @param $err Error object
-     * @return A JSON object with the send results (either "result" or "error")
-     */
-    std::future<json> setBalance(BigNumber amount, Error &err);
-
-    /**
-     * Deal ERC-20 to the account.
-     * @param tokenAddress The ERC-20 smart contract address
-     * @param amount The amount of ERC-20
-     * @param $err Error object
-     * @return A JSON object with the send results (either "result" or "error")
-     */
-    std::future<json> dealERC20(dev::Address tokenAddress, BigNumber amount, Error &err);
 
     /**
      * Store the wallet's password in memory.

@@ -8,7 +8,6 @@
 #include <nlohmann/json.hpp>
 
 #include <web3cpp/Error.h>
-#include <web3cpp/devcrypto/SecretStore.h>
 #include <web3cpp/devcore/CommonData.h>
 #include <web3cpp/devcore/SHA3.h>
 

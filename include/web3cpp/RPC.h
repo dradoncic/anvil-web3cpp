@@ -14,9 +14,9 @@
  * Every function returns a properly formatted JSON object that can be sent
  * to a provider through an HTTP request.
  * The structure of the JSON return is as follows:
- * 
+ *
  * `{"jsonrpc": "2.0", "id": 1, "method": "<method-name>", "params": ["<method-params>"]}`
- * 
+ *
  * Every JSON return defaults to an id of `1`. If multiple requests will be
  * sent at once, their fields will have to be ordered manually.
  * Functions that require an Error object will do sanity checks on inputs,
@@ -346,6 +346,73 @@ namespace RPC {
    * @param &err Error object.
    */
   json eth_submitHashrate(const std::string& hashrate, const std::string& id, Error &err);
+
+  /**
+   * Removes transaction from the pool.
+   * @param transactionHash The transaction hash.
+   * @param &err Error object.
+   */
+  json anvil_dropTransaction(const std::string& transactionHash, Error &err);
+
+  /**
+   * Removes all transactions from the pool.
+   * @param &err Error object.
+   */
+  json anvil_dropAllTransactions(Error &err);
+
+  /**
+   * Set the minimum gas price for the node.
+   * @param gasPrice The gas price.
+   * @param &err Error object.
+   */
+  json anvil_setMinGasPrice(BigNumber gasPrice, Error &err);
+
+  /**
+   * Sets the base fee of the next block.
+   * @param baseFee The base fee.
+   * @parama &err Error object.
+   */
+  json anvil_setNextBlockBaseFeePerGas(BigNumber baseFee, Error &err);
+
+  /**
+   * Sets the balance of an account.
+   * @param address The address of an account.
+   * @param balance The new balance of the account.
+   * @param &err Error object.
+   */
+  json anvil_setBalance(const std::string& address, BigNumber balance, Error &err);
+
+  /**
+   * Modifies the balance of an account.
+   * @param address The address of an account.
+   * @param amount The amount to add/remove from the balance of an account.
+   * @param &err Error object.
+   */
+  json anvil_addBalance(const std::string& address, BigNumber amount, Error &err);
+
+  /**
+   * Deals desired ERC20 to/from an account.
+   * @param tokenAddress The contract address.
+   * @param address The account address.
+   * @param amount The amount to add/remove from the account.
+   * @param &err Error object.
+   */
+  json anvil_dealERC20(const std::string& tokenAddress, BigNumber amount, Error &err);
+
+  /**
+   * Query the number of transactions currently pending for inclusion in the next
+   * block, as weel as the ones that are being scheduled for future execution.
+   * @param &err Error object.
+   */
+  json geth_txPoolStatus(Error &err);
+
+  /**
+   * Queryr the list of exact details of all transactions currently pending
+   * for  inclusion in the next block, as weel as the ones that are being
+   * schedules for future execution.
+   * @param &err Error object.
+   */
+  json geth_txPoolContent(Error &err);
 };
 
 #endif  // RPC_H

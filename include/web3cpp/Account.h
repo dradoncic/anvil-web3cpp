@@ -6,7 +6,6 @@
 #include <vector>
 #include <memory>
 
-#include <web3cpp/DB.h>
 #include <web3cpp/Net.h>
 #include <web3cpp/Provider.h>
 #include <web3cpp/Utils.h>
@@ -25,18 +24,14 @@ class Account {
   private:
     std::string _address;                                        ///< Address for the account.
     std::string _name;                                           ///< Custom name/label for the account.
-    std::string _derivationPath;                                 ///< Complete derivation path for the account (e.g. "m/44'/60'/0'/0").
+    std::string _derivationKey;                                  ///< Derivation key for the account..
     uint64_t _nonce;                                             ///< Current nonce for the account.
-    bool _isLedger;                                              ///< Indicates the account is imported from a Ledger device.
     const std::unique_ptr<Provider>& provider;                   ///< Pointer to Web3::defaultProvider.
-    mutable std::mutex accountLock;                              ///< Mutex for managing read/write access to the account object.
-    Database transactionDB;                                      ///< Database of transactions made with the account.
 
   public:
-  
+
     /**
      * Default constructor.
-     * @param walletPath The path for the wallet from which the account comes from.
      * @param name Custom name/label for the account.
      * @param __address Address for the account.
      * @param __derivationPath Full derivation path for the account (e.g. `m/44'/60'/0'/0`).
@@ -44,37 +39,32 @@ class Account {
      * @param *_provider Pointer to the provider used by the account.
      */
     Account(
-      const boost::filesystem::path& walletPath, const std::string& __address, const std::string& __name,
-      const std::string& __derivationPath, bool __isLedger, const std::unique_ptr<Provider>& _provider
+      const std::string& __address, const std::string& __name,
+      const std::string& __privateKey, const std::unique_ptr<Provider>& _provider
     );
 
     /// Copy constructor.
     Account(const Account& other) noexcept :
       _address(other._address),
       _name(other._name),
-      _derivationPath(other._derivationPath),
-      _isLedger(other._isLedger),
+      _derivationKey(other._derivationKey),
       _nonce(other._nonce),
-      provider(other.provider),
-      transactionDB(other.transactionDB)
+      provider(other.provider)
     {}
-    
+
     /// Copy constructor from pointer.
     Account(const std::unique_ptr<Account>& other) noexcept :
       _address(other->_address),
       _name(other->_name),
-      _derivationPath(other->_derivationPath),
-      _isLedger(other->_isLedger),
+      _derivationKey(other->_derivationKey),
       _nonce(other->_nonce),
-      provider(other->provider),
-      transactionDB(other->transactionDB)
+      provider(other->provider)
     {}
-    
+
     const std::string& address()        const { return _address; }           ///< Getter for the address.
     const std::string& name()           const { return _name; }              ///< Getter for the custom name/label.
-    const std::string& derivationPath() const { return _derivationPath; }    ///< Getter for the derivation path.
+    const std::string& derivationKey()  const { return _derivationKey; }       ///< Getter for the private key..
     const uint64_t& nonce()             const { return _nonce; }             ///< Getter for the nonce.
-    bool isLedger()                     const { return _isLedger; }          ///< Getter for the Ledger flag.
 
     /**
      * Request the account's balance from the network.
@@ -83,17 +73,29 @@ class Account {
     std::future<BigNumber> balance() const;
 
     /**
-     * Save a transaction to the account's local history database.
-     * @param signedTx The raw transaction signature that will be decoded and stored.
-     * @return `true` on success, `false` on failure.
+     * Add balance to the account (ETH).
+     * @param amount The amount of ETH
+     * @param $err Error object
+     * @return A JSON object with the send results (either "result" or "error")
      */
-    bool saveTxToHistory(std::string signedTx);
+     std::future<json> addBalance(BigNumber amount, Error &err);
 
     /**
-     * Get all saved transactions from this account's local history database.
-     * @return The account's transaction history as a JSON object.
+     * Set balance to the account (ETH).
+     * @param amount The amount of ETH
+     * @param $err Error object
+     * @return A JSON object with the send results (either "result" or "error")
      */
-    json getTxHistory() const;
+    std::future<json> setBalance(BigNumber amount, Error &err);
+
+    /**
+     * Deal ERC-20 to the account.
+     * @param tokenAddress The ERC-20 smart contract address
+     * @param amount The amount of ERC-20
+     * @param $err Error object
+     * @return A JSON object with the send results (either "result" or "error")
+     */
+    std::future<json> dealERC20(const std::string& tokenAddress, BigNumber amount, Error &err);
 };
 
 #endif  // ACCOUNTS_H

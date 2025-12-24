@@ -37,56 +37,8 @@ static const std::unique_ptr<Account> NullAccount = nullptr;
 
 class Wallet {
   private:
-    dev::bytesSec passHash;                             ///< Hash for the wallet's password
-    dev::h256 passSalt;                                 ///< Salt for the wallet's password.
-    int passIterations = 100000;                        ///< Number of PBKDF2 iterations to hash+salt the wallet's password.
-    boost::filesystem::path path;                       ///< The wallet's folder path.
     const std::unique_ptr<Provider>& provider;          ///< Pointer to Web3::defaultProvider.
-    Database infoDB;                                    ///< The wallet's information database.
-    Database accountDB;                                 ///< The wallet's account database.
-    bool _isLoaded;                                     ///< Indicates the wallet is properly loaded.
-    std::string _password;                              ///< In-memory plain text copy of the wallet's password. Set by the user when they want to "remember" the password.
-    std::time_t _passEnd;                               ///< Timestamp after which the password will be "forgotten"/erased from memory.
-    std::thread _passThread;                            ///< Thread object that runs passHandler().
     std::vector<std::unique_ptr<Account>> accountList;  ///< List of accounts loaded in this wallet. vector is modified on constructor (load from DB) and createNew
-
-    /// Get the wallet's "wallet.info" file path. Usually used to check if the wallet exists.
-    boost::filesystem::path walletExistsPath() { return path.string() + "/wallet.info"; };
-
-    /// Get the wallet's root folder path.
-    boost::filesystem::path walletFolder() { return path.string() + "/wallet"; };
-
-    /// Get the wallet's account database folder path.
-    boost::filesystem::path accountsFolder() { return path.string() + "/wallet/accounts"; };
-
-    /// Get the wallet's seed phrase file path.
-    boost::filesystem::path seedPhraseFile() { return path.string() + "/wallet/seed"; };
-
-    /// Get the wallet's transaction database root folder path.
-    boost::filesystem::path transactionsFolder() { return path.string() + "/wallet/transactions"; }
-
-    /// Threaded function that handles the logic of storing/clearing password to/from memory.
-    void passHandler() {
-      while (true) {
-        std::time_t now = std::time(nullptr);
-        if (now >= this->_passEnd) break;
-        std::this_thread::sleep_for(std::chrono::seconds(1));
-      }
-      this->_password.clear();
-      this->_passEnd = 0;
-      return;
-    }
-
-    /**
-     * Creates a new wallet.
-     * Called by loadWallet() if no wallet is found on the desired path.
-     * Also attempts to create a default account in the process.
-     * @param &password The wallet's password.
-     * @param &error Error object.
-     * @return `true` if the wallet was successfully created, `false` otherwise.
-     *         Will still return `true` if the default account wasn't created.
-     */
-    bool createNewWallet(const std::string& password, Error &error);
 
   public:
     /**
@@ -94,42 +46,11 @@ class Wallet {
      * @param *_provider Pointer to the provider that will be used.
      * @param _path The path for the wallet.
      */
-    Wallet(const std::unique_ptr<Provider>& _provider, boost::filesystem::path _path)
-      : provider(_provider), path(_path),
-        infoDB("walletInfo", walletFolder()),
-        accountDB("accounts", walletFolder())
+    Wallet(const std::unique_ptr<Provider>& _provider)
+      : provider(_provider)
     {};
 
     const std::unique_ptr<Provider>& getProvider() const { return this->provider; } ///< Getter for provider.
-
-    /**
-     * Load a wallet with the given password.
-     * Creates a new wallet if no wallet exists.
-     * @param &password The wallet's password.
-     * @param &error Error object.
-     * @return `true` if the wallet is successfully loaded, `false` otherwise.
-     */
-    bool loadWallet(const std::string& password, Error &error);
-
-    /**
-     * Check if a wallet is loaded.
-     * @return `true` if wallet is loaded, `false` otherwise.
-     */
-    bool isLoaded() { return this->_isLoaded; }
-
-    /**
-     * Check if a given password matches with the wallet's.
-     * @param &password The password to be checked.
-     * @return `true` if the password matches the wallet's, `false` otherwise.
-     */
-    bool checkPassword(const std::string& password);
-
-    /**
-     * Check if the wallet file and its keys folder exists in a given folder.
-     * @param &wallet_path The folder to be checked.
-     * @return `true` if a wallet exists in the given folder, `false` otherwise.
-     */
-    static bool walletExists(boost::filesystem::path &wallet_path);
 
     /**
      * Create a new account. Address is stored as lowercase.
@@ -142,22 +63,8 @@ class Wallet {
      * @return The checksum address of the new account, or an empty string on failure.
      */
     std::string createAccount(
-      std::string derivPath, const std::string& password, std::string name,
+      std::string derivPath, std::string name,
       Error &error, std::string seed = ""
-    );
-
-    /**
-     * Import a given private key into the wallet. Address is stored as lowercase.
-     * @param &secret The private/public key pair to import.
-     * @param &password The wallet's password.
-     * @param name A custom human-readable name/label for the account.
-     * @param &derivPath The full derivation path of the account (e.g. "m/44'/60'/0'/0").
-     * @param &error Error object.
-     * @return `true` if the key was successfully imported, `false` otherwise.
-     */
-    bool importPrivKey(
-      dev::Secret const &secret, std::string const &password,
-      std::string const &name, std::string const &derivPath, Error &error
     );
 
     /**
@@ -239,35 +146,10 @@ class Wallet {
     std::future<json> sendTransaction(std::string signedTx, Error &err);
 
     /**
-     * Store the wallet's password in memory.
-     * @param password The wallet's password.
-     * @param seconds (optional) The number of seconds to store the password in memory.
-     *                Defaults to 0, which means "store indefinitely until cleared manually".
-     */
-    void storePassword(const std::string& password, unsigned int seconds = 0);
-
-    void clearPassword(); ///< Clear the wallet's password from memory.
-
-    /**
-     * Check if the wallet has a password stored in memory.
-     * @return `true` is password is stored in memory, `false` otherwise.
-     */
-    bool isPasswordStored();
-
-    /**
      * Get the accounts stored in the wallet.
      * @return A list of addresses from the wallet.
      */
     std::vector<std::string> getAccounts();
-
-    /**
-     * Get the account seed phrase
-     * @param password the Wallet's password.
-     * @param &err Error object.
-     * @return The wallet seed phrase.
-     */
-
-    std::string getSeedPhrase(const std::string& password, Error &err);
 
     /**
      * Get the details for a specific account.

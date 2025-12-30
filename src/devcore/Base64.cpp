@@ -146,7 +146,7 @@ bytes dev::fromBase64(std::string const& encoded_string)
             char_array_4[j] = 0;
 
         for (j = 0; j < 4; j++)
-        char_array_4[j] = find_base64_char_index(char_array_4[j]);
+            char_array_4[j] = find_base64_char_index(char_array_4[j]);
 
         char_array_3[0] = (char_array_4[0] << 2) + ((char_array_4[1] & 0x30) >> 4);
         char_array_3[1] = ((char_array_4[1] & 0xf) << 4) + ((char_array_4[2] & 0x3c) >> 2);

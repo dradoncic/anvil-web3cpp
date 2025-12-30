@@ -40,7 +40,8 @@ class Account {
      */
     Account(
       const std::string& __address, const std::string& __name,
-      const std::string& __privateKey, const std::unique_ptr<Provider>& _provider
+      const std::string& __privateKey, const std::unique_ptr<Provider>& _provider,
+      uint64_t nonce = 0
     );
 
     /// Copy constructor.

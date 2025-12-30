@@ -245,7 +245,7 @@ private:
 };
 
 template <unsigned T>
-class SecureFixedHash: private FixedHash<T>
+class SecureFixedHash: public FixedHash<T>
 {
 public:
     using ConstructFromHashType = typename FixedHash<T>::ConstructFromHashType;

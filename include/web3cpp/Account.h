@@ -79,7 +79,7 @@ class Account {
      * @param $err Error object
      * @return A JSON object with the send results (either "result" or "error")
      */
-     std::future<json> addBalance(BigNumber amount) const;
+     std::future<BigNumber> addBalance(BigNumber amount) const;
 
     /**
      * Set balance to the account (ETH).
@@ -87,7 +87,7 @@ class Account {
      * @param $err Error object
      * @return A JSON object with the send results (either "result" or "error")
      */
-    std::future<json> setBalance(BigNumber amount) const;
+    std::future<BigNumber> setBalance(BigNumber amount) const;
 
     // /**
     //  * Deal ERC-20 to the account.

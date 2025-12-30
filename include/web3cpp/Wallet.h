@@ -7,6 +7,7 @@
 #include <string>
 #include <thread>
 #include <vector>
+#include <optional>
 
 #include "Utils.h"
 
@@ -71,7 +72,7 @@ class Wallet {
      * @param privateKey The private key for the account.
      * @return An Account object with the provided details.
      */
-    Account getAccount(
+    std::optional<Account> getAccount(
         std::string address, std::string name,
         std::string privateKey, uint64_t nonce
     );
@@ -117,9 +118,6 @@ class Wallet {
       BigNumber gasLimit, BigNumber gasPrice, std::string dataHex,
       int nonce, Error &error, bool creation = false
     );
-
-
-    // NOTE (deen) : get rid of this dumb shit and make the Skeleto EIP-1559 by default
 
     /**
      * Sign a built transaction.

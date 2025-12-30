@@ -6,7 +6,7 @@ Account Wallet::createAccount(
 ) {
   // Derive and import the account.
   dev::KeyPair k = dev::KeyPair::create();
-  std::string addr = Utils::toLowercaseAddress("0x" + dev::toHex(k.address()));
+  std::string addr = Utils::toChecksumAddress("0x" + dev::toHex(k.address()));
 
   Account acc(
       addr,
@@ -18,17 +18,25 @@ Account Wallet::createAccount(
   return acc;
 }
 
-Account Wallet::getAccount(
+std::optional<Account> Wallet::getAccount(
   std::string address, std::string name,
   std::string privateKey, uint64_t nonce
 ) {
- Account acc(
-     address, name,
-     privateKey, provider,
-     nonce
- );
+  if (!Utils::isAddress(address))
+      return std::nullopt;
 
- return acc;
+  dev::Secret s(dev::toHex(privateKey));
+
+  if (Utils::toLowercaseAddress(address) != "0x" + toAddress(toPublic(s)).hex())
+    return std::nullopt;
+
+  Account acc(
+      address, name,
+      privateKey, provider,
+      nonce
+  );
+
+  return acc;
 }
 
 std::string Wallet::sign(

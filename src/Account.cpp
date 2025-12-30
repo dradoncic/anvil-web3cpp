@@ -1,19 +1,25 @@
+#include <stdexcept>
 #include <web3cpp/Account.h>
+#include <exception>
 
 Account::Account(
-  const boost::filesystem::path& walletPath, const std::string& __address, const std::string& __name,
-  const std::string& __derivationPath, bool __isLedger, const std::unique_ptr<Provider>& _provider
-) : _address(__address), _name(__name), _derivationPath(__derivationPath),
-  _isLedger(__isLedger), provider(_provider),
-  transactionDB("transactions/" + __address, walletPath)
+  const std::string& __address, const std::string& __name,
+  const std::string& __privateKey, const std::unique_ptr<Provider>& __provider,
+  uint64_t __nonce
+) : _address(__address), _name(__name), _privateKey(__privateKey), provider(__provider)
 {
   Error error;
-  std::string nonceRequest = Net::HTTPRequest(
-    this->provider, Net::RequestTypes::POST,
-    RPC::eth_getTransactionCount(_address, "latest", error).dump()
-  );
-  json nonceJson = json::parse(nonceRequest);
-  _nonce = boost::lexical_cast<HexTo<uint64_t>>(nonceJson["result"].get<std::string>());
+  if (!__nonce)
+  {
+      std::string nonceRequest = Net::HTTPRequest(
+        this->provider, Net::RequestTypes::POST,
+        RPC::eth_getTransactionCount(_address, "latest", error).dump()
+      );
+      json nonceJson = json::parse(nonceRequest);
+      _nonce = boost::lexical_cast<HexTo<uint64_t>>(nonceJson["result"].get<std::string>());
+      return;
+  }
+  _nonce = __nonce;
 }
 
 std::future<BigNumber> Account::balance() const {
@@ -35,20 +41,15 @@ std::future<BigNumber> Account::balance() const {
   });
 }
 
-bool Account::saveTxToHistory(std::string signedTx) {
-  json txData = Utils::decodeRawTransaction(signedTx);
-  return this->transactionDB.putKeyValue(txData["hash"], txData.dump());
+std::future<json> Account::addBalance(BigNumber amount) const
+{
 }
 
-json Account::getTxHistory() const {
-  json ret;
-  std::map<std::string, std::string> hist = this->transactionDB.getAllPairs();
-  for (std::pair<std::string, std::string> item : hist) {
-    ret[item.first] = item.second;
-  }
-  return ret;
+std::future<json> Account::setBalance(BigNumber amount) const
+{
 }
 
-
-
-
+// bool Account::saveTxToHistory(std::string signedTx) {
+//   json txData = Utils::decodeRawTransaction(signedTx);
+//   return this->transactionDB.putKeyValue(txData["hash"], txData.dump());
+// }

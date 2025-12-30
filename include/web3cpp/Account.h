@@ -79,7 +79,7 @@ class Account {
      * @param $err Error object
      * @return A JSON object with the send results (either "result" or "error")
      */
-     std::future<json> addBalance(BigNumber amount, Error &err);
+     std::future<json> addBalance(BigNumber amount) const;
 
     /**
      * Set balance to the account (ETH).
@@ -87,16 +87,16 @@ class Account {
      * @param $err Error object
      * @return A JSON object with the send results (either "result" or "error")
      */
-    std::future<json> setBalance(BigNumber amount, Error &err);
+    std::future<json> setBalance(BigNumber amount) const;
 
-    /**
-     * Deal ERC-20 to the account.
-     * @param tokenAddress The ERC-20 smart contract address
-     * @param amount The amount of ERC-20
-     * @param $err Error object
-     * @return A JSON object with the send results (either "result" or "error")
-     */
-    std::future<json> dealERC20(const std::string& tokenAddress, BigNumber amount, Error &err);
+    // /**
+    //  * Deal ERC-20 to the account.
+    //  * @param tokenAddress The ERC-20 smart contract address
+    //  * @param amount The amount of ERC-20
+    //  * @param $err Error object
+    //  * @return A JSON object with the send results (either "result" or "error")
+    //  */
+    // std::future<json> dealERC20(const std::string& tokenAddress, BigNumber amount, Error &err);
 };
 
 #endif  // ACCOUNTS_H

@@ -137,6 +137,15 @@ class Wallet {
      * @return A future that resolves to a JSON response containing the transaction hash or error details.
      */
     std::future<json> sendTransaction(std::string signedTx, Error &error);
+
+    /**
+     * Drop transaction from the mempool.
+     * @param transactionHash The transaction hash
+     * @return The hash of transaction that was canceled.
+     */
+    std::future<json> dropTransaction(const std::string& transactionHash);
+
+
 };
 
 #endif  // WALLET_H

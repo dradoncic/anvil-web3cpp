@@ -124,7 +124,7 @@ Address const& TransactionBase::sender() const
 }
 
 SignatureStruct const& TransactionBase::signature() const
-{ 
+{
     if (!m_vrs)
         BOOST_THROW_EXCEPTION(TransactionIsUnsigned());
 

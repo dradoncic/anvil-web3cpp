@@ -41,16 +41,16 @@ public:
     TransactionBase(TransactionSkeleton const& _ts, Secret const& _s = Secret());
 
     /// Constructs a signed message-call transaction.
-    TransactionBase(u256 const& _value, u256 const& _gasPrice, u256 const& _gas, Address const& _dest, bytes const& _data, u256 const& _nonce, Secret const& _secret): m_type(MessageCall), m_nonce(_nonce), m_value(_value), m_receiveAddress(_dest), m_gasPrice(_gasPrice), m_gas(_gas), m_data(_data) { sign(_secret); }
+    TransactionBase(u256 const& _value, u256 const& _gasPrice, u256 const& _gas, Address const& _dest, bytes const& _data, u256 const& _nonce, Secret const& _secret): m_function(MessageCall), m_nonce(_nonce), m_value(_value), m_receiveAddress(_dest), m_gasPrice(_gasPrice), m_gas(_gas), m_data(_data) { sign(_secret); }
 
     /// Constructs a signed contract-creation transaction.
-    TransactionBase(u256 const& _value, u256 const& _gasPrice, u256 const& _gas, bytes const& _data, u256 const& _nonce, Secret const& _secret): m_type(ContractCreation), m_nonce(_nonce), m_value(_value), m_gasPrice(_gasPrice), m_gas(_gas), m_data(_data) { sign(_secret); }
+    TransactionBase(u256 const& _value, u256 const& _gasPrice, u256 const& _gas, bytes const& _data, u256 const& _nonce, Secret const& _secret): m_function(ContractCreation), m_nonce(_nonce), m_value(_value), m_gasPrice(_gasPrice), m_gas(_gas), m_data(_data) { sign(_secret); }
 
     /// Constructs an unsigned message-call transaction.
-    TransactionBase(u256 const& _value, u256 const& _gasPrice, u256 const& _gas, Address const& _dest, bytes const& _data, u256 const& _nonce = 0): m_type(MessageCall), m_nonce(_nonce), m_value(_value), m_receiveAddress(_dest), m_gasPrice(_gasPrice), m_gas(_gas), m_data(_data) {}
+    TransactionBase(u256 const& _value, u256 const& _gasPrice, u256 const& _gas, Address const& _dest, bytes const& _data, u256 const& _nonce = 0): m_function(MessageCall), m_nonce(_nonce), m_value(_value), m_receiveAddress(_dest), m_gasPrice(_gasPrice), m_gas(_gas), m_data(_data) {}
 
     /// Constructs an unsigned contract-creation transaction.
-    TransactionBase(u256 const& _value, u256 const& _gasPrice, u256 const& _gas, bytes const& _data, u256 const& _nonce = 0): m_type(ContractCreation), m_nonce(_nonce), m_value(_value), m_gasPrice(_gasPrice), m_gas(_gas), m_data(_data) {}
+    TransactionBase(u256 const& _value, u256 const& _gasPrice, u256 const& _gas, bytes const& _data, u256 const& _nonce = 0): m_function(ContractCreation), m_nonce(_nonce), m_value(_value), m_gasPrice(_gasPrice), m_gas(_gas), m_data(_data) {}
 
     /// Constructs a transaction from the given RLP.
     explicit TransactionBase(bytesConstRef _rlp, CheckTransaction _checkSig);
@@ -59,7 +59,7 @@ public:
     explicit TransactionBase(bytes const& _rlp, CheckTransaction _checkSig): TransactionBase(&_rlp, _checkSig) {}
 
     /// Checks equality of transactions.
-    bool operator==(TransactionBase const& _c) const { return m_type == _c.m_type && (m_type == ContractCreation || m_receiveAddress == _c.m_receiveAddress) && m_value == _c.m_value && m_data == _c.m_data; }
+    bool operator==(TransactionBase const& _c) const { return m_function == _c.m_function && (m_function == ContractCreation || m_receiveAddress == _c.m_receiveAddress) && m_value == _c.m_value && m_data == _c.m_data; }
     /// Checks inequality of transactions.
     bool operator!=(TransactionBase const& _c) const { return !operator==(_c); }
 
@@ -80,10 +80,10 @@ public:
     void checkChainId(uint64_t _chainId) const;
 
     /// @returns true if transaction is non-null.
-    explicit operator bool() const { return m_type != NullTransaction; }
+    explicit operator bool() const { return m_function != NullTransaction; }
 
     /// @returns true if transaction is contract-creation.
-    bool isCreation() const { return m_type == ContractCreation; }
+    bool isCreation() const { return m_function == ContractCreation; }
 
     /// Serialises this transaction to an RLPStream.
     /// @throws TransactionIsUnsigned if including signature was requested but it was not initialized
@@ -140,16 +140,24 @@ public:
     u256 rawV() const;
 
     void sign(Secret const& _priv);			///< Sign the transaction.
-	
+
 	void signFromSigStruct(SignatureStruct const& sigStruct);
 
 protected:
     /// Type of transaction.
-    enum Type
+    enum Function
     {
         NullTransaction,				///< Null transaction.
         ContractCreation,				///< Transaction to create contracts - receiveAddress() is ignored.
         MessageCall						///< Transaction to invoke a message call - receiveAddress() is used.
+    };
+
+    enum Type
+    {
+        EIP2930,
+        EIP1559,
+        EIP4844,
+        EIP7702
     };
 
     static bool isZeroSignature(u256 const& _r, u256 const& _s) { return !_r && !_s; }
@@ -157,17 +165,22 @@ protected:
     /// Clears the signature.
     void clearSignature() { m_vrs = SignatureStruct(); }
 
-    Type m_type = NullTransaction;		///< Is this a contract-creation transaction or a message-call transaction?
+    Function m_function = NullTransaction;		///< Is this a contract-creation transaction or a message-call transaction?
+    Type m_type = EIP1559;               /// < Typed-envelope transaction
+    uint64_t m_chainId;
     u256 m_nonce;						///< The transaction-count of the sender.
-    u256 m_value;						///< The amount of ETH to be transferred by this transaction. Called 'endowment' for contract-creation transactions.
-    Address m_receiveAddress;			///< The receiving address of the transaction.
-    u256 m_gasPrice;					///< The base fee and thus the implied exchange rate of ETH to GAS.
-    u256 m_gas;							///< The total gas to convert, paid for from sender's account. Any unused gas gets refunded once the contract is ended.
-    bytes m_data;						///< The data associated with the transaction, or the initialiser if it's a creation transaction.
+    u256 m_maxPriorityFeePerGas;        ///< The maximum fee per gas sender is willing to give to miners to incentivize them to include their transaction.
+    u256 m_maxFeePerGas;                ///< The maximum fee per gas sender is willing to pay total (covering both priority fee and base fee)
+    u256 m_gasLimit;                    ///< The upper limit of total gas to convert, paid for from sender's account. Any unused gas gets refunded.
+    Address m_destination;              ///< The receiving address of the transaction.
+    u256 m_value;                       ///< The amount of ETH to be transferred by this transaction. Called "endowment" for contract-creation transactions.
+    bytes m_data;                       ///< The data associated with the transaction, or the initializer if it's a creation transaction.
+    AccessList m_accessList;            ///< The list of addresss and storage keys that the transaction plans to access; for more info, https://eips.ethereum.org/EIPS/eip-2930
+
     boost::optional<SignatureStruct> m_vrs;	///< The signature of the transaction. Encodes the sender.
     /// EIP155 value for calculating transaction hash
     /// https://github.com/ethereum/EIPs/blob/master/EIPS/eip-155.md
-    boost::optional<uint64_t> m_chainId;
+    /// We are including chainID as RLP field and implementing yParity signage rather than rawV. (Cannot find which EIP introduced this)
 
     mutable h256 m_hashWith;			///< Cached hash of transaction with signature.
     mutable boost::optional<Address> m_sender;  ///< Cached sender, determined from signature.

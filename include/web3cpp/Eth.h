@@ -231,11 +231,22 @@ class Eth {
     );
 
     /**
-     * Drop transaction from the mempool.
-     * @param transactionHash The transaction hash
-     * @return The hash of transaction that was canceled.
+     * Get the transaction fee history.
+     * @param blockCount Requested range of blocks.
+     * @param defaultBlock (optional) The block to use as reference. Defaults to Eth::defaultBlock.
+     * @param rewardPercentile (optional) A monotonically increasing list of percentile values (used for effective tip per gas, i.e. priority fee).
+     * @return The fee history for the returned block range. This can be a subsection of the requested range if not all blocks are available.
      */
-    std::future<json> dropTransaction(const std::string& transactionHash);
+    std::future<json> feeHistory(
+        uint64_t blockCount, const std::string& defaultBlock = "",
+        const std::vector<uint64_t>& rewardPercentiles = { 10, 50, 90}
+    );
+
+    /**
+     * Get the maxPriorityFeePerGas.
+     * @return The current maxPriorityFeePerGase in wei.
+     */
+    std::future<json> getMaxPriorityFeePeGas();
 
     /**
      * Drop all transactions from the mempool.

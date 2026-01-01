@@ -348,6 +348,21 @@ namespace RPC {
   json eth_submitHashrate(const std::string& hashrate, const std::string& id, Error &err);
 
   /**
+   * Returns the current maxPriorityFeePerGas in wei.
+   * @param &err Error object.
+   */
+  json eth_getMaxPriorityFeePerGas(Error &err);
+
+  /*
+   * Transaction fee history.
+   * @param blockCount Requested range of blocks.
+   * @param defaultBlock Highest block of the requested range.
+   * @param rewardPercentile A monotonically increasing list of percentile values (used for effective tip per gas, i.e. priority fee).
+   * @param &err Error object.
+   */
+  json eth_feeHistory(uint64_t blockCount, BigNumber defaultBlock, std::vector<uint64_t> rewardPercentiles, Error &err);
+
+  /**
    * Removes transaction from the pool.
    * @param transactionHash The transaction hash.
    * @param &err Error object.

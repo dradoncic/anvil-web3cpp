@@ -456,4 +456,3 @@ uint64_t Eth::getChainId() {
 std::string Eth::getNodeInfo() {
   return std::string("web3cpp/") + PROJECT_VERSION;
 }
-

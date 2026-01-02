@@ -8,8 +8,15 @@
 #include <web3cpp/devcrypto/Common.h>
 #include <web3cpp/devcore/RLP.h>
 #include <web3cpp/devcore/SHA3.h>
+#include <nlohmann/json.hpp>
 
 #include <boost/optional.hpp>
+
+#define MAX_PRIORITY_FEE 5
+#define MIN_CONTRACT_CREATION_GAS 53000
+#define MIN_MESSAGE_CALL_GAS 21000
+
+using json = nlohmann::ordered_json;
 
 namespace dev
 {
@@ -134,8 +141,17 @@ public:
     /// @returns the max fee per gas and thus the implied exchange rate of ETH to GAS.
     u256 maxFeePerGas() const { return m_maxFeePerGas; }
 
+    /// @param _f eth_feeHistory json objec
+    /// @param _l priority feeLevel
+    /// @param _m base fee multiplier
+    void setFees(const json& _f, FeeLevel _l, double _m);
+
     /// @returns the total gas to convert, paid for from sender's account. Any unused gas gets refunded once the contract is ended.
     u256 gasLimit() const { return m_gasLimit; }
+
+    /// @param _g estimatedGas
+    /// @param _m safety  multiplier
+    void setGas(u256 _g, double _m = 1.2);
 
     /// @returns the receiving address of the message-call transaction (undefined for contract-creation transactions).
     Address destination() const { return m_destination; }
@@ -146,6 +162,12 @@ public:
     /// Synonym for safeSender().
     Address from() const { return safeSender(); }
 
+    /// @returns the senders priority fee level
+    FeeLevel feeLevel() const { return m_feeLevel; }
+
+    /// Sets the users new priority fee preference. Clears any signature & prior fees.
+    void setFeeLevel(FeeLevel _l) { m_feeLevel = _l; clearSignature(); clearFees(); }
+
     /// @returns the data associated with this (message-call) transaction. Synonym for initCode().
     bytes const& data() const { return m_data; }
 
@@ -153,7 +175,7 @@ public:
     u256 nonce() const { return m_nonce; }
 
     /// Sets the nonce to the given value. Clears any signature.
-    void setNonce(u256 const& _n) { clearSignature(); m_nonce = _n; }
+    void setNonce(u256 const& _n) { clearGas(); clearFees(); clearSignature(); m_nonce = _n; }
 
     /// @returns true if the transaction was signed
     bool hasSignature() const { return m_vrs.has_value(); }
@@ -173,6 +195,10 @@ public:
 
 	void signFromSigStruct(SignatureStruct const& sigStruct);
 
+	json json(bool _i = false) const;
+
+	bool signable() const { return m_gasLimit != Invalid256 && m_maxFeePerGas != Invalid256; }
+
 protected:
     /// Type of transaction.
     enum Function
@@ -186,6 +212,8 @@ protected:
 
     /// Clears the signature.
     void clearSignature() { m_vrs = SignatureStruct(); }
+    void clearGas() { m_gasLimit = Invalid256; }
+    void clearFees() { m_maxPriorityFeePerGas = Invalid256; m_maxFeePerGas = Invalid256; }
 
     Function m_function = NullTransaction;		///< Is this a contract-creation transaction or a message-call transaction?
     Type m_type;                        ///< Typed-envelope transaction

@@ -179,6 +179,16 @@ private:
 
 template<class... Args> using Handler = std::shared_ptr<typename Signal<Args...>::HandlerAux>;
 
+using StorageKey = u256;
+
+struct AccessItem
+{
+    Address address;
+    std::vector<StorageKey> storageKeys;
+};
+
+using AccessList = std::vector<AccessItem>;
+
 struct TransactionSkeleton
 {
 	bool creation = false;
@@ -191,20 +201,10 @@ struct TransactionSkeleton
 	u256 maxPriorityFeePerGas = Invalid256;
 	u256 maxFeePerGas = Invalid256;
 	u256 gasLimit = Invalid256;
+	AccessList accessList = {};
 
 	std::string userReadable(bool _toProxy, std::function<std::pair<bool, std::string>(TransactionSkeleton const&)> const& _getNatSpec, std::function<std::string(Address const&)> const& _formatAddress) const;
 };
-
-using StorageKey = u256;
-
-struct AccessItem
-{
-    Address address;
-    std::vector<StorageKey> storageKeys;
-};
-
-using AccessList = std::vector<AccessItem>;
-
 
 void badBlock(bytesConstRef _header, std::string const& _err);
 inline void badBlock(bytes const& _header, std::string const& _err) { badBlock(&_header, _err); }

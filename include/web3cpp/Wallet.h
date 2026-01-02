@@ -10,6 +10,7 @@
 #include <optional>
 
 #include "Utils.h"
+#include "web3cpp/ethcore/Common.h"
 
 #include <boost/algorithm/string/replace.hpp>
 #include <nlohmann/json.hpp>
@@ -105,29 +106,38 @@ class Wallet {
      * @param from The address that will send the transaction.
      * @param to The destination address (recipient for transfers, contract for calls).
      * @param value The amount of Wei to transfer (0 for contract calls).
-     * @param gasLimit The maximum gas units allowed for this transaction.
-     * @param gasPrice The price per gas unit in Wei.
+     * @param chainID The chain identification number.
      * @param dataHex The encoded transaction data (empty for ETH transfers, ABI-encoded for contract calls).
+     * @param accessList The access list of the transation
      * @param nonce The transaction count of the sender (prevents replay attacks).
      * @param error Error object for error reporting.
      * @param creation (optional) Set to true if this is a contract creation transaction. Defaults to false.
      * @return A TransactionSkeleton struct filled with transaction data, ready to be signed.
      */
     dev::eth::TransactionSkeleton buildTransaction(
-      std::string from, std::string to, BigNumber value,
-      BigNumber gasLimit, BigNumber gasPrice, std::string dataHex,
-      int nonce, Error &error, bool creation = false
+      std::string from, std::string to, BigNumber value, std::string dataHex,
+      dev::eth::AccessList accessList, int nonce, Error &error, bool creation = false
+    );
+
+    /**
+     * Estimates the gas fields of an transaction.
+     * @param The transaction skeleton from buildTransaction.
+     * @param feeLevel The priority fee willing to be paid to the miner.
+     * @return A Transaction Base struct filled with everything in Transaction Skeleton and gas fields.
+     */
+    dev::eth::TransactionBase estimateTransaction(
+        dev::eth::TransactionSkeleton txObj, dev::eth::FeeLevel feeLevel
     );
 
     /**
      * Sign a built transaction.
-     * @param txObj The transaction skeleton from buildTransaction().
+     * @param txObj The transaction base from estimateTransaction().
      * @param privateKey The private key of the transaction sender.
      * @param error Error object for error reporting.
      * @return The RLP-encoded signed transaction (ready to broadcast), or empty on failure.
      */
     std::string signTransaction(
-      dev::eth::TransactionSkeleton txObj, std::string privateKey, Error &error
+      dev::eth::TransactionBase& txObj, std::string privateKey, Error &error
     );
 
     /**

@@ -46,18 +46,6 @@ enum FeeLevel
     High    // 90th percentile
 };
 
-// Function m_function = NullTransaction;		///< Is this a contract-creation transaction or a message-call transaction?
-// Type m_type = EIP1559;               /// < Typed-envelope transaction
-// uint64_t m_chainId;
-// u256 m_nonce;						///< The transaction-count of the sender.
-// u256 m_maxPriorityFeePerGas;        ///< The maximum fee per gas sender is willing to give to miners to incentivize them to include their transaction.
-// u256 m_maxFeePerGas;                ///< The maximum fee per gas sender is willing to pay total (covering both priority fee and base fee)
-// u256 m_gasLimit;                    ///< The upper limit of total gas to convert, paid for from sender's account. Any unused gas gets refunded.
-// Address m_destination;              ///< The receiving address of the transaction.
-// u256 m_value;                       ///< The amount of ETH to be transferred by this transaction. Called "endowment" for contract-creation transactions.
-// bytes m_data;                       ///< The data associated with the transaction, or the initializer if it's a creation transaction.
-// AccessList m_accessList;            ///< The list of addresss and storage keys that the transaction plans to access; for more info, https://eips.ethereum.org/EIPS/eip-2930
-
 /// Encodes a transaction, ready to be exported to or freshly imported from RLP.
 class TransactionBase
 {
@@ -69,10 +57,10 @@ public:
     TransactionBase(TransactionSkeleton const& _ts, Secret const& _s = Secret());
 
     /// Constructs a signed message-call transaction.
-    TransactionBase(u256 const& _value, Address const& _dest, bytes const& _data, u256 const& _nonce, uint64_t _chainId, Secret const& _secret, AccessList _accessList = {}, FeeLevel _feeLevel = Medium): m_function(MessageCall), m_type(EIP1559), m_feeLevel(_feeLevel), m_nonce(_nonce), m_chainId(_chainId), m_value(_value), m_destination(_dest), m_data(_data), m_accessList(_accessList) { sign(_secret); }
+    TransactionBase(u256 const& _value, Address const& _dest, bytes const& _data, u256 const& _nonce, uint64_t _chainId, Secret const& _secret, AccessList _accessList = {}, FeeLevel _feeLevel = Medium): m_function(MessageCall), m_type(EIP1559), m_feeLevel(_feeLevel), m_nonce(_nonce), m_chainId(_chainId), m_value(_value), m_destination(_dest), m_data(_data), m_accessList(_accessList) {}
 
     /// Constructs a signed contract-creation transaction.
-    TransactionBase(u256 const& _value, bytes const& _data, u256 const& _nonce, uint64_t _chainId, Secret const& _secret, FeeLevel _feeLevel =  Medium): m_function(ContractCreation), m_type(EIP1559),  m_feeLevel(_feeLevel),  m_nonce(_nonce), m_chainId(_chainId), m_value(_value), m_data(_data) { sign(_secret); }
+    TransactionBase(u256 const& _value, bytes const& _data, u256 const& _nonce, uint64_t _chainId, Secret const& _secret, FeeLevel _feeLevel =  Medium): m_function(ContractCreation), m_type(EIP1559),  m_feeLevel(_feeLevel),  m_nonce(_nonce), m_chainId(_chainId), m_value(_value), m_data(_data) {}
 
     /// Constructs an unsigned message-call transaction.
     TransactionBase(u256 const& _value, Address const& _dest, bytes const& _data, uint64_t _chainId, u256 const& _nonce = 0, AccessList _accessList = {}, FeeLevel _feeLevel = Medium): m_function(MessageCall), m_type(EIP1559), m_feeLevel(_feeLevel), m_nonce(_nonce), m_chainId(_chainId), m_value(_value), m_destination(_dest), m_data(_data), m_accessList(_accessList) {}
@@ -87,7 +75,7 @@ public:
     explicit TransactionBase(bytes const& _rlp, CheckTransaction _checkSig): TransactionBase(&_rlp, _checkSig) {}
 
     /// Checks equality of transactions.
-    bool operator==(TransactionBase const& _c) const { return m_function == _c.m_function && (m_function == ContractCreation || m_receiveAddress == _c.m_receiveAddress) && m_value == _c.m_value && m_data == _c.m_data; }
+    bool operator==(TransactionBase const& _c) const { return m_function == _c.m_function && (m_function == ContractCreation || m_destination == _c.m_destination) && m_value == _c.m_value && m_data == _c.m_data; }
     /// Checks inequality of transactions.
     bool operator!=(TransactionBase const& _c) const { return !operator==(_c); }
 
@@ -126,17 +114,34 @@ public:
     /// @returns the amount of ETH to be transferred by this (message-call) transaction, in Wei. Synonym for endowment().
     u256 value() const { return m_value; }
 
-    /// @returns the base fee and thus the implied exchange rate of ETH to GAS.
-    u256 gasPrice() const { return m_gasPrice; }
+    // Function m_function = NullTransaction;		///< Is this a contract-creation transaction or a message-call transaction?
+    // Type m_type = EIP1559;               /// < Typed-envelope transaction
+    // uint64_t m_chainId;
+    // u256 m_nonce;						///< The transaction-count of the sender.
+    // u256 m_maxPriorityFeePerGas;        ///< The maximum fee per gas sender is willing to give to miners to incentivize them to include their transaction.
+    // u256 m_maxFeePerGas;                ///< The maximum fee per gas sender is willing to pay total (covering both priority fee and base fee)
+    // u256 m_gasLimit;                    ///< The upper limit of total gas to convert, paid for from sender's account. Any unused gas gets refunded.
+    // Address m_destination;              ///< The receiving address of the transaction.
+    // u256 m_value;                       ///< The amount of ETH to be transferred by this transaction. Called "endowment" for contract-creation transactions.
+    // bytes m_data;                       ///< The data associated with the transaction, or the initializer if it's a creation transaction.
+    // AccessList m_accessList;            ///< The list of addresss and storage keys that the transaction plans to access; for more info, https://eips.ethereum.org/EIPS/eip-2930
+
+
+
+    /// @returns the max priority fee per gas.
+    u256 maxPriorityFeePerGas() const { return m_maxPriorityFeePerGas; }
+
+    /// @returns the max fee per gas and thus the implied exchange rate of ETH to GAS.
+    u256 maxFeePerGas() const { return m_maxFeePerGas; }
 
     /// @returns the total gas to convert, paid for from sender's account. Any unused gas gets refunded once the contract is ended.
-    u256 gas() const { return m_gas; }
+    u256 gasLimit() const { return m_gasLimit; }
 
     /// @returns the receiving address of the message-call transaction (undefined for contract-creation transactions).
-    Address receiveAddress() const { return m_receiveAddress; }
+    Address destination() const { return m_destination; }
 
     /// Synonym for receiveAddress().
-    Address to() const { return m_receiveAddress; }
+    Address to() const { return m_destination; }
 
     /// Synonym for safeSender().
     Address from() const { return safeSender(); }
@@ -156,16 +161,13 @@ public:
     /// @returns true if the transaction was signed with zero signature
     bool hasZeroSignature() const { return m_vrs && isZeroSignature(m_vrs->r, m_vrs->s); }
 
-    /// @returns true if the transaction uses EIP155 replay protection
-    bool isReplayProtected() const { return m_chainId.has_value(); }
-
     /// @returns the signature of the transaction (the signature has the sender encoded in it)
     /// @throws TransactionIsUnsigned if signature was not initialized
     SignatureStruct const& signature() const;
 
     /// @returns v value of the transaction (has chainID and recoveryID encoded in it)
     /// @throws TransactionIsUnsigned if signature was not initialized
-    u256 rawV() const;
+    u256 yParity() const;
 
     void sign(Secret const& _priv);			///< Sign the transaction.
 
@@ -214,12 +216,12 @@ using TransactionBases = std::vector<TransactionBase>;
 inline std::ostream& operator<<(std::ostream& _out, TransactionBase const& _t)
 {
     _out << _t.sha3().abridged() << "{";
-    if (_t.receiveAddress())
-        _out << _t.receiveAddress().abridged();
+    if (_t.destination())
+        _out << _t.destination().abridged();
     else
         _out << "[CREATE]";
 
-    _out << "/" << _t.data().size() << "$" << _t.value() << "+" << _t.gas() << "@" << _t.gasPrice();
+    _out << "/" << _t.data().size() << "$" << _t.value() << "+" << _t.gasLimit() << "@" << _t.maxFeePerGas()  << "(" << _t.maxPriorityFeePerGas() << ")";
     _out << "<-" << _t.safeSender().abridged() << " #" << _t.nonce() << "}";
     return _out;
 }

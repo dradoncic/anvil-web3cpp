@@ -65,17 +65,14 @@ public:
     /// Constructs a transaction from a transaction skeleton & optional secret.
     TransactionBase(TransactionSkeleton const& _ts, Secret const& _s = Secret());
 
-    /// Constructs a signed message-call transaction.
-    TransactionBase(u256 const& _value, Address const& _dest, bytes const& _data, u256 const& _nonce, uint64_t _chainId, Secret const& _secret, AccessList _accessList = {}, FeeLevel _feeLevel = Medium): m_function(MessageCall), m_type(EIP1559), m_feeLevel(_feeLevel), m_nonce(_nonce), m_chainId(_chainId), m_value(_value), m_destination(_dest), m_data(_data), m_accessList(_accessList) {}
-
-    /// Constructs a signed contract-creation transaction.
-    TransactionBase(u256 const& _value, bytes const& _data, u256 const& _nonce, uint64_t _chainId, Secret const& _secret, FeeLevel _feeLevel =  Medium): m_function(ContractCreation), m_type(EIP1559),  m_feeLevel(_feeLevel),  m_nonce(_nonce), m_chainId(_chainId), m_value(_value), m_data(_data) {}
-
     /// Constructs an unsigned message-call transaction.
-    TransactionBase(u256 const& _value, Address const& _dest, bytes const& _data, uint64_t _chainId, u256 const& _nonce = 0, AccessList _accessList = {}, FeeLevel _feeLevel = Medium): m_function(MessageCall), m_type(EIP1559), m_feeLevel(_feeLevel), m_nonce(_nonce), m_chainId(_chainId), m_value(_value), m_destination(_dest), m_data(_data), m_accessList(_accessList) {}
+    TransactionBase(u256 const& _value, Address const& _dest, bytes const& _data, uint64_t _chainId, u256 const& _nonce = 0, AccessList _accessList = {}, FeeLevel _feeLevel = Medium): m_function(MessageCall), m_type(EIP1559), m_feeLevel(_feeLevel), m_nonce(_nonce),
+                                                                                                                                                                                        m_chainId(_chainId), m_value(_value), m_destination(_dest), m_data(_data), m_accessList(_accessList),
+                                                                                                                                                                                        m_gasLimit(Invalid256), m_maxPriorityFeePerGas(Invalid256), m_maxFeePerGas(Invalid256) {}
 
     /// Constructs an unsigned contract-creation transaction.
-    TransactionBase(u256 const& _value, bytes const& _data, uint64_t _chainId, u256 const& _nonce = 0, FeeLevel _feeLevel = Medium): m_function(ContractCreation), m_type(EIP1559), m_feeLevel(_feeLevel), m_nonce(_nonce), m_chainId(_chainId), m_value(_value), m_data(_data) {}
+    TransactionBase(u256 const& _value, bytes const& _data, uint64_t _chainId, u256 const& _nonce = 0, FeeLevel _feeLevel = Medium): m_function(ContractCreation), m_type(EIP1559), m_feeLevel(_feeLevel), m_nonce(_nonce), m_chainId(_chainId), m_value(_value), m_data(_data),
+                                                                                                                                     m_gasLimit(Invalid256), m_maxPriorityFeePerGas(Invalid256), m_maxFeePerGas(Invalid256) {}
 
     /// Constructs a transaction from the given RLP.
     explicit TransactionBase(bytesConstRef _rlp, CheckTransaction _checkSig);
@@ -196,9 +193,9 @@ public:
 
 	void signFromSigStruct(SignatureStruct const& sigStruct);
 
-	json stringify(bool _i = false) const;
+	json toJson() const;
 
-	bool signable() const { return m_gasLimit != Invalid256 && m_maxFeePerGas != Invalid256; }
+	bool signable() const { return m_gasLimit != Invalid256 && m_maxFeePerGas != Invalid256 && m_maxPriorityFeePerGas != Invalid256; }
 
 protected:
     /// Type of transaction.

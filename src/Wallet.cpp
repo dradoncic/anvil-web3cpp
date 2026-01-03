@@ -94,13 +94,7 @@ dev::eth::TransactionBase Wallet::estimateTransaction(
     dev::eth::TransactionSkeleton txObj, dev::eth::FeeLevel feeLevel, Error &error
 )
 {
-    json call;
-    call["from"] = toHex(txObj.from);
-    call["chainId"] = dev::toHex(txObj.chainId);
-    if (txObj.creation) call["to"] = toHex(txObj.to);
-    if (txObj.value) call["value"] = Utils::toHex(txObj.value);
-    if (!txObj.data.empty()) call["data"] = dev::toHex(txObj.data);
-    if (!txObj.accessList.empty()) call["accessList"]  = Utils::toJson(txObj.accessList);
+    auto call = txObj.toJson();
 
     auto estimatedGasFut = std::async(std::launch::async, [this, call, &error]() -> json {
         json res;
@@ -173,6 +167,13 @@ dev::eth::TransactionBase Wallet::estimateTransaction(
 
     error.setCode(0);
     return tx;
+}
+
+dev::eth::TransactionBase estimateTransaction(
+    dev::eth::TransactionBase& txObj, Error &error
+)
+{
+
 }
 
 // std::string Wallet::signTransaction(

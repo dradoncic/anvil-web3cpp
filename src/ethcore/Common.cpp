@@ -8,6 +8,7 @@
 #include <web3cpp/devcore/CommonIO.h>
 #include <web3cpp/devcore/SHA3.h>
 #include <web3cpp/ethcore/Exceptions.h>
+#include <web3cpp/Utils.h>
 
 using namespace dev;
 using namespace dev::eth;
@@ -148,4 +149,22 @@ std::string TransactionSkeleton::userReadable(bool _toProxy, std::function<std::
 }
 
 }
+}
+
+json TransactionSkeleton::toJson() const
+{
+    json j;
+
+    if (this->from != Address())       j["from"] = dev::toHex(this->from);
+    if (this->creation && this->to != Address()) j["to"] = dev::toHex(this->to);
+    if (this->value != Invalid256)    j["value"] = dev::toHex(this->value);
+    if (!this->data.empty())          j["data"] = dev::toHex(this->data);
+    if (this->chainId != 0)           j["chainId"] = dev::toHex(this->chainId);
+    if (this->nonce != Invalid256)    j["nonce"] = dev::toHex(this->nonce);
+    if (this->maxPriorityFeePerGas != Invalid256) j["maxPriorityFeePerGas"] = dev::toHex(this->maxPriorityFeePerGas);
+    if (this->maxFeePerGas != Invalid256)         j["maxFeePerGas"] = dev::toHex(this->maxFeePerGas);
+    if (this->gasLimit != Invalid256)             j["gas"] = dev::toHex(this->gasLimit);
+    if (!this->accessList.empty())   j["accessList"] = Utils::toJson(this->accessList);
+
+    return j;
 }

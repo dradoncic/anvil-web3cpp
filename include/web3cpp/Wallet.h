@@ -121,12 +121,22 @@ class Wallet {
 
     /**
      * Estimates the gas fields of an transaction.
-     * @param The transaction skeleton from buildTransaction.
+     * @param txObj The transaction skeleton from buildTransaction.
      * @param feeLevel The priority fee willing to be paid to the miner.
      * @return A Transaction Base struct filled with everything in Transaction Skeleton and gas fields.
      */
     dev::eth::TransactionBase estimateTransaction(
         dev::eth::TransactionSkeleton txObj, dev::eth::FeeLevel feeLevel, Error &error
+    );
+
+    /**
+     * Estimates the gas fields of an transaction.
+     * @param txObj A TransactionBase object..
+     * @param feeLevel The priority fee willing to be paid to the miner.
+     * @return A Transaction Base struct filled with everything in Transaction Skeleton and gas fields.
+     */
+    dev::eth::TransactionBase estimateTransaction(
+        dev::eth::TransactionBase& txObj, Error &error
     );
 
     /**

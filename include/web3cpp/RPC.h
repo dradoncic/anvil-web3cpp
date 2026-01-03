@@ -362,6 +362,15 @@ namespace RPC {
    */
   json eth_feeHistory(uint64_t blockCount, BigNumber defaultBlock, std::vector<uint64_t> rewardPercentiles, Error &err);
 
+  /*
+   * Transaction fee history.
+   * @param blockCount Requested range of blocks.
+   * @param defaultBlock Highest block of the requested range.
+   * @param rewardPercentile A monotonically increasing list of percentile values (used for effective tip per gas, i.e. priority fee).
+   * @param &err Error object.
+   */
+  json eth_feeHistory(uint64_t blockCount, const std::string& defaultBlock, std::vector<uint64_t> rewardPercentiles, Error &err);
+
   /**
    * Removes transaction from the pool.
    * @param transactionHash The transaction hash.

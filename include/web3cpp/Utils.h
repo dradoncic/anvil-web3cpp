@@ -138,9 +138,9 @@ namespace Utils {
     * @param str The string to be checked.
     * @return `true` if the string contains only numbers, `false` otherwise.
     */
-  
+
   bool isNumber(const std::string &str);
-  
+
   /**
    * Check if a given string is a valid address.
    * @param address The address to be checked. If the address has both upper
@@ -342,6 +342,14 @@ namespace Utils {
    * @return A JSON object with details of the transaction.
    */
   json decodeRawTransaction(std::string signedTx);
+
+  /**
+   * Decode AccessList object & convert to JSON.
+   * @param accessList The AccessList object.
+   * @return A JSON object with details of the AccessList.
+   */
+  json toJson(dev::eth::AccessList accessList);
+
 };
 
 #endif  // UTILS_H

@@ -15,6 +15,8 @@
 #define MAX_PRIORITY_FEE 5
 #define MIN_CONTRACT_CREATION_GAS 53000
 #define MIN_MESSAGE_CALL_GAS 21000
+#define GAS_SAFETY_MULTIPLIER 1.2
+#define BASE_FEE_MULTIPLIER 1.25
 
 using json = nlohmann::ordered_json;
 
@@ -144,14 +146,13 @@ public:
     /// @param _f eth_feeHistory json objec
     /// @param _l priority feeLevel
     /// @param _m base fee multiplier
-    void setFees(const json& _f, FeeLevel _l, double _m);
+    void setFees(const json& _f, double _m = BASE_FEE_MULTIPLIER);
 
     /// @returns the total gas to convert, paid for from sender's account. Any unused gas gets refunded once the contract is ended.
     u256 gasLimit() const { return m_gasLimit; }
 
-    /// @param _g estimatedGas
-    /// @param _m safety  multiplier
-    void setGas(u256 _g, double _m = 1.2);
+    /// @param _g estimatedGas    /// @param _m safety  multiplier
+    void setGas(u256 _g, double _m = GAS_SAFETY_MULTIPLIER);
 
     /// @returns the receiving address of the message-call transaction (undefined for contract-creation transactions).
     Address destination() const { return m_destination; }
@@ -191,11 +192,11 @@ public:
     /// @throws TransactionIsUnsigned if signature was not initialized
     u256 yParity() const;
 
-    void sign(Secret const& _priv);			///< Sign the transaction.
+    void sign(Secret const& _priv);		///< Sign the transaction.
 
 	void signFromSigStruct(SignatureStruct const& sigStruct);
 
-	json json(bool _i = false) const;
+	json stringify(bool _i = false) const;
 
 	bool signable() const { return m_gasLimit != Invalid256 && m_maxFeePerGas != Invalid256; }
 

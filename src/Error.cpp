@@ -37,7 +37,8 @@ const std::map<uint64_t, std::string> Error::codeMap = {
   {33, "JSON File Does Not Exist"},
   {34, "JSON File Read Error"},
   {35, "JSON File Write Error"},
-  {999, "Unknown Error"}
+  {999, "Unknown Error"},
+  {36, "Transaction Estimate Error"}
 };
 
 void Error::setCode(uint64_t errorCode) {
@@ -73,4 +74,3 @@ std::string Error::what() {
   this->lock.unlock();
   return ret;
 }
-

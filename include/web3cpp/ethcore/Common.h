@@ -7,10 +7,12 @@
 #include <web3cpp/devcore/Common.h>
 #include <web3cpp/devcore/Exceptions.h>
 #include <web3cpp/devcore/FixedHash.h>
+#include <nlohmann/json.hpp>
 
 #include <functional>
 #include <string>
 
+using json = nlohmann::ordered_json;
 namespace dev
 {
 
@@ -185,6 +187,18 @@ struct AccessItem
 {
     Address address;
     std::vector<StorageKey> storageKeys;
+
+    json toJson() const
+    {
+        json j;
+        j["address"] = toHex(address);  // BigNumber/Address -> "0x..."
+
+        j["storageKeys"] = json::array();
+        for (auto const& key : storageKeys)
+            j["storageKeys"].push_back(toHex(key));  // BigNumber/StorageKey -> "0x..."
+
+        return j;
+    }
 };
 
 using AccessList = std::vector<AccessItem>;

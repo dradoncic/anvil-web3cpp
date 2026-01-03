@@ -5,7 +5,6 @@
 
 #include <web3cpp/ethcore/Common.h>
 #include <web3cpp/devcore/Base64.h>
-#include <web3cpp/devcore/Terminal.h>
 #include <web3cpp/devcore/CommonIO.h>
 #include <web3cpp/devcore/SHA3.h>
 #include <web3cpp/ethcore/Exceptions.h>

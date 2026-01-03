@@ -1,3 +1,4 @@
+#include "web3cpp/ethcore/Common.h"
 #include <web3cpp/Utils.h>
 #include <web3cpp/Solidity.h>
 
@@ -78,8 +79,8 @@ std::string Utils::soliditySha3Raw(json params, Error &err) {
 }
 
 bool Utils::isHex(const std::string& hex) {
-  if (hex.substr(0, 2) == "0x" || hex.substr(0, 2) == "0X") { 
-    return (hex.substr(2).find_first_not_of("0123456789abcdefABCDEF") == std::string::npos); 
+  if (hex.substr(0, 2) == "0x" || hex.substr(0, 2) == "0X") {
+    return (hex.substr(2).find_first_not_of("0123456789abcdefABCDEF") == std::string::npos);
   }
   return (hex.find_first_not_of("0123456789abcdefABCDEF") == std::string::npos);
 }
@@ -480,3 +481,10 @@ json Utils::decodeRawTransaction(std::string signedTx) {
   return ret;
 }
 
+json Utils::toJson(dev::eth::AccessList accessList)
+{
+    json j = json::array();
+    for (const auto & item : accessList)
+        j.push_back(item.toJson());
+    return j;
+}

@@ -92,12 +92,12 @@ class Wallet {
     /**
      * Recover the address of the account that signed a given data string.
      * Implements EIP-191 signature recovery.
-     * @param dataThatWasSigned The original data that was signed.
+     * @param signedData The original data that was signed.
      * @param signature The hex-encoded signature from sign().
      * @return The address (checksummed) of the signing account, or empty if recovery fails.
      */
     std::string ecRecover(
-      std::string dataThatWasSigned, std::string signature
+      std::string signedData, std::string signature
     );
 
     /**
@@ -126,7 +126,7 @@ class Wallet {
      * @return A Transaction Base struct filled with everything in Transaction Skeleton and gas fields.
      */
     dev::eth::TransactionBase estimateTransaction(
-        dev::eth::TransactionSkeleton txObj, dev::eth::FeeLevel feeLevel
+        dev::eth::TransactionSkeleton txObj, dev::eth::FeeLevel feeLevel, Error &error
     );
 
     /**

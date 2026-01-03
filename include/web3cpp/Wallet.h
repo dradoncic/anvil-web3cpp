@@ -8,6 +8,7 @@
 #include <thread>
 #include <vector>
 #include <optional>
+#include <utility>
 
 #include "Utils.h"
 #include "web3cpp/ethcore/Common.h"
@@ -39,7 +40,17 @@ using json = nlohmann::ordered_json;
 
 class Wallet {
   private:
+
+    struct Estimations
+    {
+      dev::u256 gas = dev::Invalid256;
+      json feeHistory = {};
+      int errorCode = 0;
+    };
+
     const std::unique_ptr<Provider>& provider;          ///< Pointer to the blockchain provider.
+
+    Estimations fetchEstimations(json& txObj);
 
   public:
     /**

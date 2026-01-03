@@ -90,90 +90,84 @@ dev::eth::TransactionSkeleton Wallet::buildTransaction(
   return tx;
 }
 
-dev::eth::TransactionBase Wallet::estimateTransaction(
-    dev::eth::TransactionSkeleton txObj, dev::eth::FeeLevel feeLevel, Error &error
-)
+Wallet::Estimations Wallet::fetchEstimations(json& txObj)
 {
-    auto call = txObj.toJson();
-
-    auto estimatedGasFut = std::async(std::launch::async, [this, call, &error]() -> json {
-        json res;
+    auto estimatedGasFut = std::async(std::launch::async, [this, txObj]() -> std::pair<dev::u256, int> {
         Error rpcErr;
-        std::string rpcStr = RPC::eth_estimateGas(call, rpcErr).dump();
-        if (rpcErr.getCode() != 0) {
-            error.setCode(rpcErr.getCode());
-            res["error"] = rpcStr;
-            return res;
-        }
+        std::string rpcStr = RPC::eth_estimateGas(txObj, rpcErr).dump();
+        if (rpcErr.getCode() != 0) return {dev::Invalid256, rpcErr.getCode()};
 
         std::string req = Net::HTTPRequest(
             this->provider, Net::RequestTypes::POST, rpcStr
         );
         json reqJson = json::parse(req);
-        if (reqJson.count("error")) {
-            res["error"] = reqJson;
-            error.setCode(36);
-        } else {
-            res["result"] = reqJson["result"].get<std::string>();
-            error.setCode(0);
-        }
-        return res;
+
+        if (reqJson.count("error")) return {dev::Invalid256, 36};
+        return {Utils::toBN(reqJson["result"].get<std::string>()), 0};
     });
 
-    auto feeHistoryFut = std::async(std::launch::async, [this, &error]() -> json {
-        json res;
+    auto feeHistoryFut = std::async(std::launch::async, [this]() -> std::pair<json, int> {
         Error rpcErr;
         std::string rpcStr = RPC::eth_feeHistory(
             5, "latest", {10, 50, 90}, rpcErr
         );
-        if (rpcErr.getCode() != 0) {
-            error.setCode(rpcErr.getCode());
-            res["error"] = rpcStr;
-            return res;
-        }
+        if (rpcErr.getCode() != 0) return {json{}, 36};
 
         std::string req = Net::HTTPRequest(
             this->provider, Net::RequestTypes::POST , rpcStr
         );
         json reqJson = json::parse(req);
-        if (reqJson.count("error")) {
-            res["error"] = reqJson;
-            error.setCode(36);
-        } else {
-            res["result"] = reqJson["result"];
-            error.setCode(0);
-        }
-        return res;
+
+        if (reqJson.count("error")) return {json{}, 36};
+        return {reqJson["result"], 0};
     });
 
-    json estimatedGasRes = estimatedGasFut.get();
-    if (estimatedGasRes.contains("error")) {
-        error.setCode(36);
+    auto gasRes = estimatedGasFut.get();
+    auto feeRes = feeHistoryFut.get();
+
+    Estimations estim;
+    estim.gas = gasRes.first;
+    estim.feeHistory = feeRes.first;
+
+    estim.errorCode = gasRes.second != 0 ? gasRes.second : feeRes.second;
+    return estim;
+}
+
+dev::eth::TransactionBase Wallet::estimateTransaction(
+    dev::eth::TransactionSkeleton txObj, dev::eth::FeeLevel feeLevel, Error &error
+)
+{
+    auto call = txObj.toJson();
+    auto res = this->fetchEstimations(call);
+    if (res.errorCode != 0){
+        error.setCode(res.errorCode);
         return dev::eth::TransactionBase();
     }
-
-    json feeHistoryRes = feeHistoryFut.get();
-    if (feeHistoryRes.contains("error")) {
-        error.setCode(36);
-        return dev::eth::TransactionBase();
-    }
-
-    dev::u256 estimatedGas = Utils::toBN(estimatedGasRes.get<std::string>());
 
     dev::eth::TransactionBase tx(txObj);
     tx.setFeeLevel(feeLevel);
-    tx.setGas(estimatedGas);
-    tx.setFees(feeHistoryRes);
+    tx.setGas(res.gas);
+    tx.setFees(res.feeHistory);
 
     error.setCode(0);
     return tx;
 }
 
-dev::eth::TransactionBase estimateTransaction(
+dev::eth::TransactionBase Wallet::estimateTransaction(
     dev::eth::TransactionBase& txObj, Error &error
 )
 {
+    auto call = txObj.toJson();
+    auto res = this->fetchEstimations(call);
+    if (res.errorCode != 0){
+        error.setCode(res.errorCode);
+        return txObj;
+    }
 
+    txObj.setGas(res.gas);
+    txObj.setFees(res.feeHistory);
+
+    return txObj;
 }
 
 // std::string Wallet::signTransaction(

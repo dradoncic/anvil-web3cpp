@@ -1,4 +1,5 @@
 #include "web3cpp/Net.h"
+#include "web3cpp/RPC.h"
 #include "web3cpp/Utils.h"
 #include "web3cpp/ethcore/Common.h"
 #include <web3cpp/Wallet.h>
@@ -28,7 +29,7 @@ std::optional<Account> Wallet::getAccount(
   if (!Utils::isAddress(address))
       return std::nullopt;
 
-  dev::Secret s(dev::toHex(privateKey));
+  dev::Secret s(dev::fromHex(privateKey));
 
   if (Utils::toLowercaseAddress(address) != "0x" + toAddress(toPublic(s)).hex())
     return std::nullopt;
@@ -129,7 +130,10 @@ Wallet::Estimations Wallet::fetchEstimations(json& txObj)
     estim.gas = gasRes.first;
     estim.feeHistory = feeRes.first;
 
-    estim.errorCode = gasRes.second != 0 ? gasRes.second : feeRes.second;
+    if (gasRes.second != 0 || feeRes.second != 0) {
+        estim.errorCode = gasRes.second != 0 ? gasRes.second : feeRes.second;
+        return estim;
+    }
     return estim;
 }
 
@@ -170,118 +174,78 @@ dev::eth::TransactionBase Wallet::estimateTransaction(
     return txObj;
 }
 
-// std::string Wallet::signTransaction(
-//   dev::eth::TransactionSkeleton txObj, std::string password, Error &err
-// ) {
-//   Error e;
-//   Secret s(dev::toHex(Cipher::decrypt(
-//     getAccountRawDetails("0x" + dev::toString(txObj.from)).dump(), password, e
-//   )));
-//   if (e.getCode() != 0) { err.setCode(e.getCode()); return ""; }
-//   try {
-//     std::stringstream txHexBuffer;
-//     dev::eth::TransactionBase t(txObj);
-//     t.setNonce(txObj.nonce);
-//     t.sign(s);
-//     txHexBuffer << dev::toHex(t.rlp());
-//     err.setCode(0);
-//     return txHexBuffer.str();
-//   } catch (std::exception &e) {
-//     err.setCode(12); return ""; // Transaction Sign Error
-//   }
-// }
+std::string Wallet::signTransaction(
+    dev::eth::TransactionBase& txObj, std::string privateKey, Error &error
+)
+{
+    try {
+        std::stringstream txHexBuffer;
+        dev::Secret s(dev::fromHex(privateKey));
+        txObj.sign(s);
+        txHexBuffer << "0x" + dev::toHex(txObj.rlp());
+        error.setCode(0);
+        return txHexBuffer.str();
+    } catch (std::exception &e) {
+        error.setCode(12);
+        return "";
+    }
+}
 
-// std::future<json> Wallet::sendTransaction(std::string signedTx, Error &err) {
-//   if (signedTx.substr(0,2) != "0x" && signedTx.substr(0,2) != "0X") {
-//     signedTx.insert(0, "0x");
-//   }
-//   return std::async([this, signedTx, &err]{
-//     json txResult;
-//     Error rpcErr;
-//     std::string rpcStr = RPC::eth_sendRawTransaction(signedTx, rpcErr).dump();
-//     if (rpcErr.getCode() != 0) {
-//       err.setCode(rpcErr.getCode());
-//       txResult["error"] = rpcStr;
-//       return txResult;
-//     }
 
-//     std::string req = Net::HTTPRequest(
-//       this->provider, Net::RequestTypes::POST, rpcStr
-//     );
-//     json reqJson = json::parse(req);
+std::future<json> Wallet::sendTransaction(std::string signedTx, Error &error)
+{
+    if (signedTx.substr(0,2) != "0x" && signedTx.substr(0,2) != "0X") signedTx.insert(0, "0x");
 
-//     txResult["signature"] = signedTx;
-//     if (reqJson.count("error")) {
-//       txResult["error"] = reqJson;
-//       err.setCode(13);  // Transaction Send Error
-//     } else {
-//       txResult["result"] = reqJson["result"].get<std::string>();
-//       err.setCode(0);
-//     }
-//     return txResult;
-//   });
-// }
+    return std::async([this, signedTx, &error]{
+        json txResult;
+        Error rpcErr;
+        std::string rpcStr = RPC::eth_sendRawTransaction(signedTx, rpcErr).dump();
+        if (rpcErr.getCode() != 0) {
+            error.setCode(rpcErr.getCode());
+            txResult["error"] = rpcStr;
+            return txResult;
+        }
 
-// void Wallet::storePassword(const std::string& password, unsigned int seconds) {
-//   this->_password = password;
-//   if (seconds > 0) {
-//     this->_passEnd = std::time(nullptr) + seconds;
-//     this->_passThread = std::thread(std::bind(&Wallet::passHandler, this));
-//     this->_passThread.detach();
-//   }
-// }
+        std::string req = Net::HTTPRequest(this->provider, Net::RequestTypes::POST, rpcStr);
+        json reqJson = json::parse(req);
 
-// void Wallet::clearPassword() {
-//   this->_password = "";
-//   this->_passEnd = 0; // This ensures the thread will be terminated
-// }
+        txResult["signature"] = signedTx;
+        if (reqJson.count("error")) {
+            txResult["error"] = reqJson;
+            error.setCode(13);
+        } else {
+            txResult["result"] = reqJson["result"].get<std::string>();
+            error.setCode(0);
+        }
+        return txResult;
+    });
+}
 
-// bool Wallet::isPasswordStored() {
-//   return !this->_password.empty();
-// }
+std::future<json> Wallet::dropTransaction(std::string transactionHash, Error &error)
+{
+    if (transactionHash.substr(0,2) != "0x" && transactionHash.substr(0,2) != "0X") transactionHash.insert(0, "0x");
 
-// std::vector<std::string> Wallet::getAccounts() {
-//   std::vector<std::string> ret;
-//   for (auto const &acc : this->accountList) {
-//     ret.push_back(acc->address());
-//   }
-//   return ret;
-// }
+    return std::async([this, transactionHash, &error]{
+        json txResult;
+        Error rpcErr;
+        std::string rpcStr = RPC::anvil_dropTransaction(transactionHash, rpcErr).dump();
+        if (rpcErr.getCode() != 0) {
+            error.setCode(rpcErr.getCode());
+            txResult["error"] = rpcStr;
+            return txResult;
+        }
 
-// const std::unique_ptr<Account>& Wallet::getAccountDetails(std::string address) {
-//   address = Utils::toLowercaseAddress(address);
-//   for (auto &acc : this->accountList) {
-//     if (acc->address() == address) {
-//       return acc;
-//     }
-//   }
+        std::string req = Net::HTTPRequest(this->provider, Net::RequestTypes::POST, rpcStr);
+        json reqJson = json::parse(req);
 
-//   return NullAccount;
-// }
-
-// json Wallet::getAccountRawDetails(std::string address) {
-//   json ret;
-//   address = Utils::toLowercaseAddress(address);
-//   std::map<std::string, std::string> accs = this->accountDB.getAllPairs();
-//   for (std::pair<std::string, std::string> acc : accs) {
-//     if (acc.first == address) {
-//       ret = json::parse(acc.second);
-//       break;
-//     }
-//   }
-//   return ret;
-// }
-
-// std::string Wallet::getSeedPhrase(const std::string& password, Error &err) {
-//   std::string seedPhrase;
-//   Error readErr, decErr;
-//   boost::filesystem::path tmpPath = seedPhraseFile();
-//   json seedJson = Utils::readJSONFile(tmpPath, readErr);
-//   if (readErr.getCode() != 0) {
-//     err.setCode(readErr.getCode());
-//     return "";
-//   }
-//   seedPhrase = Cipher::decrypt(seedJson.dump(), password, decErr);
-//   if (decErr.getCode() != 0) { err.setCode(decErr.getCode()); return ""; }
-//   return seedPhrase;
-// }
+        txResult["hash"] = transactionHash;
+        if (reqJson.count("error")) {
+            txResult["error"] = reqJson;
+            error.setCode(37);
+        } else {
+            txResult["result"] = reqJson["result"].get<std::string>();
+            error.setCode(0);
+        }
+        return txResult;
+    });
+}

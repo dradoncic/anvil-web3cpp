@@ -214,3 +214,44 @@ h256 TransactionBase::sha3(IncludeSignature _sig) const
         m_hashWith = ret;
     return ret;
 }
+
+json TransactionBase::toJson() const
+{
+    json j;
+
+    // from is always required
+    if (safeSender() != Address())
+        j["from"] = dev::toHex(safeSender());
+
+    // to only for message-call transactions
+    if (m_function == MessageCall && m_destination != Address())
+        j["to"] = dev::toHex(m_destination);
+
+    // value only if non-zero
+    if (m_value != Invalid256)
+        j["value"] = dev::toHex(m_value);
+
+    // gas / fees for typed transactions
+    if (m_gasLimit != Invalid256)
+        j["gas"] = dev::toHex(m_gasLimit);
+
+    if (m_maxPriorityFeePerGas != Invalid256)
+        j["maxPriorityFeePerGas"] = dev::toHex(m_maxPriorityFeePerGas);
+
+    if (m_maxFeePerGas != Invalid256)
+        j["maxFeePerGas"] = dev::toHex(m_maxFeePerGas);
+
+    // data if present
+    if (!m_data.empty())
+        j["data"] = dev::toHex(m_data);
+
+    // chainId if set
+    if (m_chainId != 0)
+        j["chainId"] = dev::toHex(m_chainId);
+
+    // access list if applicable
+    if (!m_accessList.empty())
+        j["accessList"] = Utils::toJson(m_accessList);
+
+    return j;
+}

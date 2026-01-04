@@ -172,9 +172,10 @@ class Wallet {
     /**
      * Drop transaction from the mempool.
      * @param transactionHash The transaction hash
+     * @param &err Error object.
      * @return The hash of transaction that was canceled.
      */
-    std::future<json> dropTransaction(const std::string& transactionHash);
+    std::future<json> dropTransaction(std::string transactionHash, Error &error);
 
 
 };

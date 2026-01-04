@@ -38,7 +38,8 @@ const std::map<uint64_t, std::string> Error::codeMap = {
   {34, "JSON File Read Error"},
   {35, "JSON File Write Error"},
   {999, "Unknown Error"},
-  {36, "Transaction Estimate Error"}
+  {36, "Transaction Estimate Error"},
+  {37, "Transaction Drop Error"}
 };
 
 void Error::setCode(uint64_t errorCode) {

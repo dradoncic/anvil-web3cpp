@@ -48,7 +48,7 @@ Provider::Provider(const Provider &p) :
 
 Provider::Provider(
   std::string name, std::string host, std::string target, uint64_t port,
-  uint64_t chainId, std::string currency, std::string explorerUrl) 
+  uint64_t chainId, std::string currency, std::string explorerUrl)
   : name(name), host(host), target(target), port(port), chainId(chainId),
   currency(currency), explorerUrl(explorerUrl) { }
 

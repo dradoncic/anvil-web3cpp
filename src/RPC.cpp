@@ -541,4 +541,3 @@ json RPC::eth_submitHashrate(const std::string& hashrate, const std::string& id,
   return (err.getCode() != 0) ? json::object()
     : _buildJSON("eth_submitHashrate", {hashrate, id});
 }
-

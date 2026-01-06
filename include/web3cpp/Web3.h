@@ -21,7 +21,6 @@
 class Web3 {
   private:
     const std::unique_ptr<Provider> defaultProvider;             ///< Provider used for the whole %Web3 library.
-    const boost::filesystem::path defaultPath;                   ///< Path for the %Web3 wallet.
 
   public:
     /**
@@ -38,11 +37,7 @@ class Web3 {
     /// Constructor overload that uses a custom Provider.
     Web3(Provider provider);
 
-    /// Constructor overload that uses a custom wallet path.
-    Web3(boost::filesystem::path path);
-
     /// Constructor overload that uses both custom Provider & custom Path.
-    Web3(Provider provider, boost::filesystem::path path);
 
     std::string version;  ///< Current version of the library.
     Wallet wallet;        ///< Object for accessing the wallet.

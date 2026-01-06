@@ -175,7 +175,7 @@ json TransactionBase::toJson() const
 
     // chainId if set
     if (m_chainId != 0)
-        j["chainId"] = dev::toHex(m_chainId);
+        j["chainId"] = Utils::toHex(m_chainId);
 
     // access list if applicable
     if (!m_accessList.empty())
@@ -259,7 +259,7 @@ TransactionBase::TransactionBase(bytesConstRef _rlpData, CheckTransaction _check
     }
     catch (Exception& _e)
     {
-        _e << errinfo_name("invalid transaction format RLP: " + toHex(_rlpData.data()));
+        _e << errinfo_name("invalid transaction format RLP: " + toHex(_rlpData));
         throw;
     }
 }

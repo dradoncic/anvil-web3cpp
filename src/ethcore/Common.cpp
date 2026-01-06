@@ -104,52 +104,52 @@ std::string formatBalance(bigint const& _b)
 	return ret.str();
 }
 
-std::string TransactionSkeleton::userReadable(bool _toProxy, std::function<std::pair<bool, std::string>(TransactionSkeleton const&)> const& _getNatSpec, std::function<std::string(Address const&)> const& _formatAddress) const
-{
-	if (creation)
-	{
-		// show notice concerning the creation code. TODO: this needs entering into natspec.
-		return std::string("ÐApp is attempting to create a contract; ") + (_toProxy ? "(this transaction is not executed directly, but forwarded to another ÐApp) " : "") + "to be endowed with " + formatBalance(value) + ", with additional network fees of up to " + formatBalance(gas * gasPrice) + ".\n\nMaximum total cost is " + formatBalance(value + gas * gasPrice) + ".";
-	}
+// std::string TransactionSkeleton::userReadable(bool _toProxy, std::function<std::pair<bool, std::string>(TransactionSkeleton const&)> const& _getNatSpec, std::function<std::string(Address const&)> const& _formatAddress) const
+// {
+// 	if (creation)
+// 	{
+// 		// show notice concerning the creation code. TODO: this needs entering into natspec.
+// 		return std::string("ÐApp is attempting to create a contract; ") + (_toProxy ? "(this transaction is not executed directly, but forwarded to another ÐApp) " : "") + "to be endowed with " + formatBalance(value) + ", with additional network fees of up to " + formatBalance(gas * gasPrice) + ".\n\nMaximum total cost is " + formatBalance(value + gas * gasPrice) + ".";
+// 	}
 
-	bool isContract;
-	std::string natSpec;
-	tie(isContract, natSpec) = _getNatSpec(*this);
-	if (!isContract)
-	{
-		// recipient has no code - nothing special about this transaction, show basic value transfer info
-		return "ÐApp is attempting to send " + formatBalance(value) + " to a recipient " + _formatAddress(to) + (_toProxy ? " (this transaction is not executed directly, but forwarded to another ÐApp)" : "") + ", with additional network fees of up to " + formatBalance(gas * gasPrice) + ".\n\nMaximum total cost is " + formatBalance(value + gas * gasPrice) + ".";
-	}
+// 	bool isContract;
+// 	std::string natSpec;
+// 	tie(isContract, natSpec) = _getNatSpec(*this);
+// 	if (!isContract)
+// 	{
+// 		// recipient has no code - nothing special about this transaction, show basic value transfer info
+// 		return "ÐApp is attempting to send " + formatBalance(value) + " to a recipient " + _formatAddress(to) + (_toProxy ? " (this transaction is not executed directly, but forwarded to another ÐApp)" : "") + ", with additional network fees of up to " + formatBalance(gas * gasPrice) + ".\n\nMaximum total cost is " + formatBalance(value + gas * gasPrice) + ".";
+// 	}
 
-	if (natSpec.empty())
-		return "ÐApp is attempting to call into an unknown contract at address " +
-				_formatAddress(to) + ".\n\n" +
-				(_toProxy ? "This transaction is not executed directly, but forwarded to another ÐApp.\n\n" : "")  +
-				"Call involves sending " +
-				formatBalance(value) + " to the recipient, with additional network fees of up to " +
-				formatBalance(gas * gasPrice) +
-				"However, this also does other stuff which we don't understand, and does so in your name.\n\n" +
-				"WARNING: This is probably going to cost you at least " +
-				formatBalance(value + gas * gasPrice) +
-				", however this doesn't include any side-effects, which could be of far greater importance.\n\n" +
-				"REJECT UNLESS YOU REALLY KNOW WHAT YOU ARE DOING!";
+// 	if (natSpec.empty())
+// 		return "ÐApp is attempting to call into an unknown contract at address " +
+// 				_formatAddress(to) + ".\n\n" +
+// 				(_toProxy ? "This transaction is not executed directly, but forwarded to another ÐApp.\n\n" : "")  +
+// 				"Call involves sending " +
+// 				formatBalance(value) + " to the recipient, with additional network fees of up to " +
+// 				formatBalance(gas * gasPrice) +
+// 				"However, this also does other stuff which we don't understand, and does so in your name.\n\n" +
+// 				"WARNING: This is probably going to cost you at least " +
+// 				formatBalance(value + gas * gasPrice) +
+// 				", however this doesn't include any side-effects, which could be of far greater importance.\n\n" +
+// 				"REJECT UNLESS YOU REALLY KNOW WHAT YOU ARE DOING!";
 
-	return "ÐApp attempting to conduct contract interaction with " +
-	_formatAddress(to) +
-	": <b>" + natSpec + "</b>.\n\n" +
-	(_toProxy ? "This transaction is not executed directly, but forwarded to another ÐApp.\n\n" : "") +
-	(value > 0 ?
-		"In addition, ÐApp is attempting to send " +
-		formatBalance(value) + " to said recipient, with additional network fees of up to " +
-		formatBalance(gas * gasPrice) + " = " +
-		formatBalance(value + gas * gasPrice) + "."
-	:
-		"Additional network fees are at most" +
-		formatBalance(gas * gasPrice) + ".");
-}
+// 	return "ÐApp attempting to conduct contract interaction with " +
+// 	_formatAddress(to) +
+// 	": <b>" + natSpec + "</b>.\n\n" +
+// 	(_toProxy ? "This transaction is not executed directly, but forwarded to another ÐApp.\n\n" : "") +
+// 	(value > 0 ?
+// 		"In addition, ÐApp is attempting to send " +
+// 		formatBalance(value) + " to said recipient, with additional network fees of up to " +
+// 		formatBalance(gas * gasPrice) + " = " +
+// 		formatBalance(value + gas * gasPrice) + "."
+// 	:
+// 		"Additional network fees are at most" +
+// 		formatBalance(gas * gasPrice) + ".");
+// }
 
-}
-}
+// }
+// }
 
 json TransactionSkeleton::toJson() const
 {
@@ -157,14 +157,30 @@ json TransactionSkeleton::toJson() const
 
     if (this->from != Address())       j["from"] = dev::toHex(this->from);
     if (this->to != Address())         j["to"] = dev::toHex(this->to);
-    if (this->value != 0)              j["value"] = dev::toHex(this->value);
+    if (this->value != 0)              j["value"] = Utils::toHex(this->value);
     if (!this->data.empty())          j["data"] = dev::toHex(this->data);
-    if (this->chainId != 0)           j["chainId"] = dev::toHex(this->chainId);
-    if (this->nonce != Invalid256)    j["nonce"] = dev::toHex(this->nonce);
-    if (this->maxPriorityFeePerGas != Invalid256) j["maxPriorityFeePerGas"] = dev::toHex(this->maxPriorityFeePerGas);
-    if (this->maxFeePerGas != Invalid256)         j["maxFeePerGas"] = dev::toHex(this->maxFeePerGas);
-    if (this->gasLimit != Invalid256)             j["gas"] = dev::toHex(this->gasLimit);
+    if (this->chainId != 0)           j["chainId"] = Utils::toHex(this->chainId);
+    if (this->nonce != Invalid256)    j["nonce"] = Utils::toHex(this->nonce);
+    if (this->maxPriorityFeePerGas != Invalid256) j["maxPriorityFeePerGas"] = Utils::toHex(this->maxPriorityFeePerGas);
+    if (this->maxFeePerGas != Invalid256)         j["maxFeePerGas"] = Utils::toHex(this->maxFeePerGas);
+    if (this->gasLimit != Invalid256)             j["gas"] = Utils::toHex(this->gasLimit);
     if (!this->accessList.empty())   j["accessList"] = Utils::toJson(this->accessList);
 
     return j;
+}
+
+json AccessItem::toJson() const
+{
+    json j;
+    j["address"] = toHex(address);  // BigNumber/Address -> "0x..."
+
+    j["storageKeys"] = json::array();
+    for (auto const& key : storageKeys)
+        j["storageKeys"].push_back(Utils::toHex(key));  // BigNumber/StorageKey -> "0x..."
+
+    return j;
+}
+
+}
+
 }

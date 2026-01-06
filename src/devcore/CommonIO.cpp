@@ -3,7 +3,6 @@
 // Licensed under the GNU General Public License, Version 3.
 
 #include <web3cpp/devcore/CommonIO.h>
-#include <web3cpp/devcore/FileSystem.h>
 #include <iostream>
 #include <cstdlib>
 #include <fstream>
@@ -63,68 +62,6 @@ std::string memDump(bytes const& _bytes, unsigned _width, bool _html)
     if (_html)
         ret << "</pre>";
     return ret.str();
-}
-
-template <typename _T>
-inline _T contentsGeneric(boost::filesystem::path const& _file)
-{
-    _T ret;
-    size_t const c_elementSize = sizeof(typename _T::value_type);
-    boost::nowide::ifstream is(_file.string(), std::ifstream::binary);
-    if (!is)
-        return ret;
-
-    // get length of file:
-    is.seekg(0, is.end);
-    std::streamoff length = is.tellg();
-    if (length == 0)
-        return ret; // do not read empty file (MSVC does not like it)
-    is.seekg(0, is.beg);
-
-    ret.resize((length + c_elementSize - 1) / c_elementSize);
-    is.read(const_cast<char*>(reinterpret_cast<char const*>(ret.data())), length);
-    is.close();
-    return ret;
-}
-
-bytes contents(boost::filesystem::path const& _file)
-{
-    return contentsGeneric<bytes>(_file);
-}
-
-bytesSec contentsSec(boost::filesystem::path const& _file)
-{
-    bytes b = contentsGeneric<bytes>(_file);
-    bytesSec ret(b);
-    bytesRef(&b).cleanse();
-    return ret;
-}
-
-std::string contentsString(boost::filesystem::path const& _file)
-{
-    return contentsGeneric<std::string>(_file);
-}
-
-void writeFile(boost::filesystem::path const& _file, bytesConstRef _data, bool _writeDeleteRename)
-{
-    if (_writeDeleteRename)
-    {
-        fs::path tempPath = appendToFilename(_file, "-%%%%%%"); // XXX should not convert to string for this
-        writeFile(tempPath, _data, false);
-        // will delete _file if it exists
-        fs::rename(tempPath, _file);
-    }
-    else
-    {
-        createDirectoryIfNotExistent(_file.parent_path());
-
-        boost::nowide::ofstream s(_file, std::ios::trunc | std::ios::binary);
-        s.write(reinterpret_cast<char const*>(_data.data()), _data.size());
-        s.close();
-        if (!s)
-            BOOST_THROW_EXCEPTION(FileError() << errinfo_comment("Could not write to file: " + _file.string()));
-        DEV_IGNORE_EXCEPTIONS(fs::permissions(_file, fs::owner_read | fs::owner_write));
-    }
 }
 
 void copyDirectory(boost::filesystem::path const& _srcDir, boost::filesystem::path const& _dstDir)

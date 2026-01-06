@@ -188,17 +188,7 @@ struct AccessItem
     Address address;
     std::vector<StorageKey> storageKeys;
 
-    json toJson() const
-    {
-        json j;
-        j["address"] = toHex(address);  // BigNumber/Address -> "0x..."
-
-        j["storageKeys"] = json::array();
-        for (auto const& key : storageKeys)
-            j["storageKeys"].push_back(toHex(key));  // BigNumber/StorageKey -> "0x..."
-
-        return j;
-    }
+    json toJson() const;
 };
 
 using AccessList = std::vector<AccessItem>;
@@ -220,7 +210,7 @@ struct TransactionSkeleton
 
 	json toJson() const;
 	bool isCreation() const { return to == Address(); }
-	std::string userReadable(bool _toProxy, std::function<std::pair<bool, std::string>(TransactionSkeleton const&)> const& _getNatSpec, std::function<std::string(Address const&)> const& _formatAddress) const;
+	// std::string userReadable(bool _toProxy, std::function<std::pair<bool, std::string>(TransactionSkeleton const&)> const& _getNatSpec, std::function<std::string(Address const&)> const& _formatAddress) const;
 };
 
 void badBlock(bytesConstRef _header, std::string const& _err);

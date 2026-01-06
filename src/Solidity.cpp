@@ -348,4 +348,3 @@ std::string Solidity::packMulti(const json& args, Error &err, const std::string&
   ret += arrToAppend;
   return ret;
 }
-

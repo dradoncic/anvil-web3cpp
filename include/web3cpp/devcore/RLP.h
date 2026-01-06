@@ -301,6 +301,18 @@ public:
         return ret;
     }
 
+    eth::AccessItem toAccessItem(int _flags = Strict) const
+    {
+        if (!isList() || itemCount() != 2)
+            BOOST_THROW_EXCEPTION(BadCast() << errinfo_comment("Expected [address, storageKeys]"));
+
+        eth::AccessItem ai;
+        ai.address = toHash<Address>(RLP::VeryStrict);
+        ai.storageKeys = (*this)[1].toVector<eth::StorageKey>(_flags);
+
+        return ai;
+    }
+
     /// @returns the data payload. Valid for all types.
     bytesConstRef payload() const { auto l = length(); if (l > m_data.size()) BOOST_THROW_EXCEPTION(BadRLP()); return m_data.cropped(payloadOffset(), l); }
 
@@ -353,6 +365,7 @@ template <> struct Converter<uint32_t> { static uint32_t convert(RLP const& _r, 
 template <> struct Converter<uint64_t> { static uint64_t convert(RLP const& _r, int _flags) { return _r.toInt<uint64_t>(_flags); } };
 template <> struct Converter<u160> { static u160 convert(RLP const& _r, int _flags) { return _r.toInt<u160>(_flags); } };
 template <> struct Converter<u256> { static u256 convert(RLP const& _r, int _flags) { return _r.toInt<u256>(_flags); } };
+template <> struct Converter<eth::AccessItem> { static eth::AccessItem convert(RLP const& _r, int _flags) { return _r.toAccessItem(_flags); } };
 template <> struct Converter<bigint> { static bigint convert(RLP const& _r, int _flags) { return _r.toInt<bigint>(_flags); } };
 template <unsigned N> struct Converter<FixedHash<N>> { static FixedHash<N> convert(RLP const& _r, int _flags) { return _r.toHash<FixedHash<N>>(_flags); } };
 template <class T, class U> struct Converter<std::pair<T, U>> { static std::pair<T, U> convert(RLP const& _r, int _flags) { return _r.toPair<T, U>(_flags); } };

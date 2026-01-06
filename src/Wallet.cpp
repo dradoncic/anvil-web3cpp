@@ -69,15 +69,14 @@ std::string Wallet::ecRecover(std::string signedData, std::string signature)
 }
 
 dev::eth::TransactionSkeleton Wallet::buildTransaction(
-    std::string from, std::string to, BigNumber value, std::string dataHex,
-    dev::eth::AccessList accessList, int nonce, Error &error, bool creation
+    std::string from, int nonce, Error &error, std::string to,
+    std::string dataHex, BigNumber value, dev::eth::AccessList accessList
 )
 {
   dev::eth::TransactionSkeleton tx;
   try {
-    tx.creation = creation;
     tx.from = dev::eth::toAddress(Utils::toLowercaseAddress(from));
-    tx.to = creation ? dev::Address() : dev::eth::toAddress(Utils::toLowercaseAddress(to));
+    tx.to = to.empty() ? dev::Address() : dev::eth::toAddress(Utils::toLowercaseAddress(to));
     tx.value = value;
     if (!dataHex.empty()) { tx.data = dev::fromHex(dataHex); }
     tx.nonce = nonce;
@@ -120,7 +119,7 @@ Wallet::Estimations Wallet::fetchEstimations(json& txObj)
         json reqJson = json::parse(req);
 
         if (reqJson.count("error")) return {json{}, 36};
-        return {reqJson["result"], 0};
+        return {reqJson, 0};
     });
 
     auto gasRes = estimatedGasFut.get();

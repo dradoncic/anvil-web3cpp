@@ -126,8 +126,8 @@ class Wallet {
      * @return A TransactionSkeleton struct filled with transaction data, ready to be signed.
      */
     dev::eth::TransactionSkeleton buildTransaction(
-      std::string from, std::string to, BigNumber value, std::string dataHex,
-      dev::eth::AccessList accessList, int nonce, Error &error, bool creation = false
+      std::string from, int nonce, Error &error, std::string to = "",
+      std::string dataHex = "", BigNumber value = {}, dev::eth::AccessList accessList = {}
     );
 
     /**

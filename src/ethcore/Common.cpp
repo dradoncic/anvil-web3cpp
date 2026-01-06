@@ -156,8 +156,8 @@ json TransactionSkeleton::toJson() const
     json j;
 
     if (this->from != Address())       j["from"] = dev::toHex(this->from);
-    if (this->creation && this->to != Address()) j["to"] = dev::toHex(this->to);
-    if (this->value != Invalid256)    j["value"] = dev::toHex(this->value);
+    if (this->to != Address())         j["to"] = dev::toHex(this->to);
+    if (this->value != 0)              j["value"] = dev::toHex(this->value);
     if (!this->data.empty())          j["data"] = dev::toHex(this->data);
     if (this->chainId != 0)           j["chainId"] = dev::toHex(this->chainId);
     if (this->nonce != Invalid256)    j["nonce"] = dev::toHex(this->nonce);

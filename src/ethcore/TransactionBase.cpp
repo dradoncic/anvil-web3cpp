@@ -2,93 +2,47 @@
 // Copyright 2015-2019 Aleth Authors.
 // Licensed under the GNU General Public License, Version 3.
 
+#include <boost/throw_exception.hpp>
 #include <web3cpp/devcore/vector_ref.h>
 #include <web3cpp/devcrypto/Common.h>
 #include <web3cpp/ethcore/Exceptions.h>
 #include <web3cpp/ethcore/TransactionBase.h>
+#include <web3cpp/Utils.h>
+
 using namespace dev;
 using namespace dev::eth;
 
-TransactionBase::TransactionBase(TransactionSkeleton const& _ts, Secret const& _s):
-    m_type(_ts.creation ? ContractCreation : MessageCall),
+TransactionBase::TransactionBase(TransactionSkeleton const& _ts):
+    m_function(_ts.isCreation() ? ContractCreation : MessageCall),
+    m_type(EIP1559),
     m_nonce(_ts.nonce),
     m_value(_ts.value),
-    m_receiveAddress(_ts.to),
-    m_gasPrice(_ts.gasPrice),
-    m_gas(_ts.gas),
+    m_destination(_ts.to),
+    m_gasLimit(_ts.gasLimit),
+    m_maxPriorityFeePerGas(_ts.maxPriorityFeePerGas),
+    m_maxFeePerGas(_ts.maxFeePerGas),
     m_data(_ts.data),
+    m_accessList(_ts.accessList),
     m_sender(_ts.from),
 	m_chainId(_ts.chainId)
-{
-    if (_s)
-        sign(_s);
-}
+{}
 
-TransactionBase::TransactionBase(bytesConstRef _rlpData, CheckTransaction _checkSig)
+Address const& TransactionBase::sender() const
 {
-    RLP const rlp(_rlpData);
-    try
+    if (!m_sender.is_initialized())
     {
-        if (!rlp.isList())
-            BOOST_THROW_EXCEPTION(InvalidTransactionFormat() << errinfo_comment("transaction RLP must be a list"));
-
-        m_nonce = rlp[0].toInt<u256>();
-        m_gasPrice = rlp[1].toInt<u256>();
-        m_gas = rlp[2].toInt<u256>();
-        if (!rlp[3].isData())
-            BOOST_THROW_EXCEPTION(InvalidTransactionFormat()
-                                  << errinfo_comment("recepient RLP must be a byte array"));
-        m_type = rlp[3].isEmpty() ? ContractCreation : MessageCall;
-        m_receiveAddress = rlp[3].isEmpty() ? Address() : rlp[3].toHash<Address>(RLP::VeryStrict);
-        m_value = rlp[4].toInt<u256>();
-
-        if (!rlp[5].isData())
-            BOOST_THROW_EXCEPTION(InvalidTransactionFormat()
-                                  << errinfo_comment("transaction data RLP must be a byte array"));
-
-        m_data = rlp[5].toBytes();
-
-        u256 const v = rlp[6].toInt<u256>();
-        h256 const r = rlp[7].toInt<u256>();
-        h256 const s = rlp[8].toInt<u256>();
-
-        if (isZeroSignature(r, s))
-        {
-            m_chainId = static_cast<uint64_t>(v);
-            m_vrs = SignatureStruct{r, s, 0};
-        }
+        if (hasZeroSignature())
+            m_sender = MaxAddress;
         else
         {
-            if (v > 36)
-            {
-                auto const chainId = (v - 35) / 2;
-                if (chainId > std::numeric_limits<uint64_t>::max())
-                    BOOST_THROW_EXCEPTION(InvalidSignature());
-                m_chainId = static_cast<uint64_t>(chainId);
-            }
-            // only values 27 and 28 are allowed for non-replay protected transactions
-            else if (v != 27 && v != 28)
-                BOOST_THROW_EXCEPTION(InvalidSignature());
+            if (!m_vrs) BOOST_THROW_EXCEPTION(TransactionIsUnsigned());
 
-            auto const recoveryID =
-                m_chainId.has_value() ? byte{v - (u256{*m_chainId} * 2 + 35)} : byte{v - 27};
-            m_vrs = SignatureStruct{r, s, recoveryID};
-
-            if (_checkSig >= CheckTransaction::Cheap && !m_vrs->isValid())
-                BOOST_THROW_EXCEPTION(InvalidSignature());
+            auto p = recover(*m_vrs, sha3(WithoutSignature));
+            if (!p) BOOST_THROW_EXCEPTION(InvalidSignature());
+            m_sender = right160(dev::sha3(bytesConstRef(p.data(), sizeof(p))));
         }
-
-        if (_checkSig == CheckTransaction::Everything)
-            m_sender = sender();
-
-        if (rlp.itemCount() > 9)
-            BOOST_THROW_EXCEPTION(InvalidTransactionFormat() << errinfo_comment("too many fields in the transaction RLP"));
     }
-    catch (Exception& _e)
-    {
-        _e << errinfo_name("invalid transaction format RLP: " + toHex(rlp.data()));
-        throw;
-    }
+    return *m_sender;
 }
 
 Address const& TransactionBase::safeSender() const noexcept
@@ -103,102 +57,56 @@ Address const& TransactionBase::safeSender() const noexcept
     }
 }
 
-Address const& TransactionBase::sender() const
-{
-    if (!m_sender.is_initialized())
-    {
-        if (hasZeroSignature())
-            m_sender = MaxAddress;
-        else
-        {
-            if (!m_vrs)
-                BOOST_THROW_EXCEPTION(TransactionIsUnsigned());
-
-            auto p = recover(*m_vrs, sha3(WithoutSignature));
-            if (!p)
-                BOOST_THROW_EXCEPTION(InvalidSignature());
-            m_sender = right160(dev::sha3(bytesConstRef(p.data(), sizeof(p))));
-        }
-    }
-    return *m_sender;
-}
-
-SignatureStruct const& TransactionBase::signature() const
-{
-    if (!m_vrs)
-        BOOST_THROW_EXCEPTION(TransactionIsUnsigned());
-
-    return *m_vrs;
-}
-
-u256 TransactionBase::rawV() const
-{
-    if (!m_vrs)
-        BOOST_THROW_EXCEPTION(TransactionIsUnsigned());
-
-    int const vOffset = m_chainId.has_value() ? *m_chainId * 2 + 35 : 27;
-    return m_vrs->v + vOffset;
-}
-
-
-void TransactionBase::sign(Secret const& _priv)
-{
-    auto sig = dev::sign(_priv, sha3(WithoutSignature));
-    SignatureStruct sigStruct = *(SignatureStruct const*)&sig;
-    if (sigStruct.isValid())
-        m_vrs = sigStruct;
-}
-
-void TransactionBase::signFromSigStruct(SignatureStruct const& sigStruct)
-{
-	if(sigStruct.isValid())
-        m_vrs = sigStruct;
-}
-
-void TransactionBase::streamRLP(RLPStream& _s, IncludeSignature _sig, bool _forEip155hash) const
-{
-    if (m_type == NullTransaction)
-        return;
-
-    _s.appendList((_sig || _forEip155hash ? 3 : 0) + 6);
-    _s << m_nonce << m_gasPrice << m_gas;
-    if (m_type == MessageCall)
-        _s << m_receiveAddress;
-    else
-        _s << "";
-    _s << m_value << m_data;
-
-    if (_sig)
-    {
-        if (!m_vrs)
-            BOOST_THROW_EXCEPTION(TransactionIsUnsigned());
-
-        if (hasZeroSignature())
-            _s << *m_chainId;
-        else
-            _s << rawV();
-
-        _s << (u256)m_vrs->r << (u256)m_vrs->s;
-    }
-    else if (_forEip155hash)
-        _s << *m_chainId << 0 << 0;
-}
-
 static const u256 c_secp256k1n("115792089237316195423570985008687907852837564279074904382605163141518161494337");
 
 void TransactionBase::checkLowS() const
 {
-    if (!m_vrs)
-        BOOST_THROW_EXCEPTION(TransactionIsUnsigned());
-
-    if (m_vrs->s > c_secp256k1n / 2)
-        BOOST_THROW_EXCEPTION(InvalidSignature());
+    if (!m_vrs) BOOST_THROW_EXCEPTION(TransactionIsUnsigned());
+    if (m_vrs->s > c_secp256k1n / 2) BOOST_THROW_EXCEPTION(InvalidSignature());
 }
 
 void TransactionBase::checkChainId(uint64_t _chainId) const
 {
-    if (m_chainId.has_value() && *m_chainId != _chainId)
-        BOOST_THROW_EXCEPTION(InvalidSignature());
+    if (m_chainId != _chainId) BOOST_THROW_EXCEPTION(InvalidSignature());
+}
+
+void TransactionBase::streamRLP(RLPStream& _s, IncludeSignature _sig) const
+{
+    if (m_function == NullTransaction || !signable()) return;
+
+    _s.appendRaw(bytes{ static_cast<byte>(m_type)}, 1);
+
+    RLPStream payload;
+
+    switch(m_type)
+    {
+        case EIP1559:
+        {
+            payload.appendList(_sig ? 11 : 8);
+            payload << m_chainId
+                    << m_nonce
+                    << m_maxPriorityFeePerGas
+                    << m_maxFeePerGas
+                    << m_gasLimit
+                    << (m_function == MessageCall ? m_destination : Address())
+                    << m_value
+                    << m_data
+                    << m_accessList;
+            break;
+        }
+        default: { BOOST_THROW_EXCEPTION(InvalidTransactionFormat()); }
+    }
+
+    if (_sig)
+    {
+        if (!m_vrs) BOOST_THROW_EXCEPTION(TransactionIsUnsigned());
+
+        payload << yParity()
+                << (u256)m_vrs->r
+                << (u256)m_vrs->s;
+    }
+
+    _s.appendRaw(payload.out());
 }
 
 h256 TransactionBase::sha3(IncludeSignature _sig) const
@@ -207,12 +115,32 @@ h256 TransactionBase::sha3(IncludeSignature _sig) const
         return m_hashWith;
 
     RLPStream s;
-    streamRLP(s, _sig, isReplayProtected() && _sig == WithoutSignature);
+    streamRLP(s, _sig);
 
     auto ret = dev::sha3(s.out());
     if (_sig == WithSignature)
         m_hashWith = ret;
     return ret;
+}
+
+SignatureStruct const& TransactionBase::signature() const
+{
+    if (!m_vrs) BOOST_THROW_EXCEPTION(TransactionIsUnsigned());
+    return *m_vrs;
+}
+
+u256 TransactionBase::yParity() const
+{
+    if (!m_vrs) BOOST_THROW_EXCEPTION(TransactionIsUnsigned());
+    return m_vrs->v;
+}
+
+void TransactionBase::sign(Secret const& _priv)
+{
+    if (!signable()) return;
+    auto sig = dev::sign(_priv, sha3(WithoutSignature));
+    SignatureStruct sigStruct = *(SignatureStruct const*)&sig;
+    if (sigStruct.isValid()) m_vrs = sigStruct;
 }
 
 json TransactionBase::toJson() const
@@ -254,4 +182,104 @@ json TransactionBase::toJson() const
         j["accessList"] = Utils::toJson(m_accessList);
 
     return j;
+}
+
+TransactionBase::TransactionBase(bytesConstRef _rlpData, CheckTransaction _checkSig)
+{
+    try
+    {
+        if (_rlpData.empty())
+            BOOST_THROW_EXCEPTION(InvalidTransactionFormat() << errinfo_comment("transaction RLP must be a list"));
+
+        byte type = _rlpData[0];
+        RLP rlp(_rlpData.cropped(1));
+        if (!rlp.isList())
+            BOOST_THROW_EXCEPTION(InvalidTransactionFormat()
+                << errinfo_comment("typed transaction payload must be a list"));
+
+        switch(type)
+        {
+            case(EIP1559) :
+            {
+                if (rlp.itemCount() != 9 && rlp.itemCount() != 12)
+                    BOOST_THROW_EXCEPTION(InvalidTransactionFormat()
+                        << errinfo_comment("invalid EIP-1559 field count"));
+
+                m_type = EIP1559;
+                m_chainId              = rlp[0].toInt<uint64_t>();
+                m_nonce                = rlp[1].toInt<u256>();
+                m_maxPriorityFeePerGas = rlp[2].toInt<u256>();
+                m_maxFeePerGas         = rlp[3].toInt<u256>();
+                m_gasLimit             = rlp[4].toInt<u256>();
+
+                if (!rlp[5].isData())
+                    BOOST_THROW_EXCEPTION(InvalidTransactionFormat());
+
+                if (rlp[5].isEmpty())
+                {
+                    m_function = ContractCreation;
+                    m_destination = Address();
+                }
+                else
+                {
+                    m_function = MessageCall;
+                    m_destination = rlp[5].toHash<Address>(RLP::VeryStrict);
+                }
+
+                m_value = rlp[6].toInt<u256>();
+                m_data  = rlp[7].toBytes();
+                m_accessList = rlp[8].toVector<AccessItem>();
+
+                if (rlp.itemCount() == 12)
+                {
+                    u256 yParity = rlp[9].toInt<u256>();
+                    u256 r       = rlp[10].toInt<u256>();
+                    u256 s       = rlp[11].toInt<u256>();
+
+                    if (yParity > 1)
+                        BOOST_THROW_EXCEPTION(InvalidSignature());
+
+                    m_vrs = SignatureStruct{ r, s, static_cast<byte>(yParity) };
+
+                    if (_checkSig >= CheckTransaction::Cheap)
+                    {
+                        checkLowS();
+                        if (!m_vrs->isValid())
+                            BOOST_THROW_EXCEPTION(InvalidSignature());
+                    }
+
+                    if (_checkSig == CheckTransaction::Everything)
+                        m_sender = sender();
+                }
+
+                break;
+            }
+            default: { BOOST_THROW_EXCEPTION(InvalidTransactionFormat()); }
+        }
+    }
+    catch (Exception& _e)
+    {
+        _e << errinfo_name("invalid transaction format RLP: " + toHex(_rlpData.data()));
+        throw;
+    }
+}
+
+void TransactionBase::setFees(const json& _f, uint64_t _m)
+{
+    auto& result = _f.at("result");
+
+    if (!result.contains("baseFeePerGas") || result["baseFeePerGas"].empty())
+        BOOST_THROW_EXCEPTION(InvalidFeeHistoryResponse() << errinfo_comment("Missing baseFeePerGas in JSON"));
+
+    u256 nextBaseFee = Utils::toBN(result["baseFeePerGas"].back());
+    nextBaseFee *= _m;
+
+    if (!result.contains("reward") || result["reward"].empty())
+        BOOST_THROW_EXCEPTION(InvalidFeeHistoryResponse() << errinfo_comment("Missing reward array in JSON"));
+
+    auto& lastRewardArray = result["reward"].back();
+    u256 maxPriorityFee = Utils::toBN(lastRewardArray[m_feeLevel]);
+
+    m_maxPriorityFeePerGas = maxPriorityFee;
+    m_maxFeePerGas = nextBaseFee + maxPriorityFee;
 }

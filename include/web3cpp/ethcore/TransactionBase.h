@@ -12,11 +12,8 @@
 
 #include <boost/optional.hpp>
 
-#define MAX_PRIORITY_FEE 5
-#define MIN_CONTRACT_CREATION_GAS 53000
-#define MIN_MESSAGE_CALL_GAS 21000
 #define GAS_SAFETY_MULTIPLIER 1.2
-#define BASE_FEE_MULTIPLIER 1.25
+#define BASE_FEE_MULTIPLIER 2
 
 using json = nlohmann::ordered_json;
 
@@ -42,7 +39,6 @@ enum class CheckTransaction
 
 enum Type
 {
-    EIP2930,
     EIP1559,
     EIP4844,
     EIP7702
@@ -63,7 +59,7 @@ public:
     TransactionBase() {}
 
     /// Constructs a transaction from a transaction skeleton & optional secret.
-    TransactionBase(TransactionSkeleton const& _ts, Secret const& _s = Secret());
+    TransactionBase(TransactionSkeleton const& _ts);
 
     /// Constructs an unsigned message-call transaction.
     TransactionBase(u256 const& _value, Address const& _dest, bytes const& _data, uint64_t _chainId, u256 const& _nonce = 0, AccessList _accessList = {}, FeeLevel _feeLevel = Medium): m_function(MessageCall), m_type(EIP1559), m_feeLevel(_feeLevel), m_nonce(_nonce),
@@ -81,17 +77,14 @@ public:
     explicit TransactionBase(bytes const& _rlp, CheckTransaction _checkSig): TransactionBase(&_rlp, _checkSig) {}
 
     /// Checks equality of transactions.
-    bool operator==(TransactionBase const& _c) const { return m_function == _c.m_function && (m_function == ContractCreation || m_destination == _c.m_destination) && m_value == _c.m_value && m_data == _c.m_data; }
+    bool operator==(TransactionBase const& _c) const { return m_type == _c.m_type && (m_function == _c.m_function && (m_function == ContractCreation || m_destination == _c.m_destination) && m_value == _c.m_value && m_data == _c.m_data); }
     /// Checks inequality of transactions.
     bool operator!=(TransactionBase const& _c) const { return !operator==(_c); }
 
     /// @returns sender of the transaction from the signature (and hash).
-    /// @throws TransactionIsUnsigned if signature was not initialized
     Address const& sender() const;
-    /// Like sender() but will never throw. @returns a null Address if the signature is invalid.
+
     Address const& safeSender() const noexcept;
-    /// Force the sender to a particular value. This will result in an invalid transaction RLP.
-    void forceSender(Address const& _a) { m_sender = _a; }
 
     /// @throws TransactionIsUnsigned if signature was not initialized
     /// @throws InvalidSValue if the signature has an invalid S value.
@@ -109,7 +102,7 @@ public:
 
     /// Serialises this transaction to an RLPStream.
     /// @throws TransactionIsUnsigned if including signature was requested but it was not initialized
-    void streamRLP(RLPStream& _s, IncludeSignature _sig = WithSignature, bool _forEip155hash = true) const;
+    void streamRLP(RLPStream& _s, IncludeSignature _sig = WithSignature) const;
 
     /// @returns the RLP serialisation of this transaction.
     bytes rlp(IncludeSignature _sig = WithSignature) const { RLPStream s; streamRLP(s, _sig); return s.out(); }
@@ -143,13 +136,13 @@ public:
     /// @param _f eth_feeHistory json objec
     /// @param _l priority feeLevel
     /// @param _m base fee multiplier
-    void setFees(const json& _f, double _m = BASE_FEE_MULTIPLIER);
+    void setFees(const json& _f, uint64_t _m = BASE_FEE_MULTIPLIER);
 
     /// @returns the total gas to convert, paid for from sender's account. Any unused gas gets refunded once the contract is ended.
     u256 gasLimit() const { return m_gasLimit; }
 
     /// @param _g estimatedGas    /// @param _m safety  multiplier
-    void setGas(u256 _g, double _m = GAS_SAFETY_MULTIPLIER);
+    void setGas(u256 _g) { m_gasLimit = _g * 12 / 10; };
 
     /// @returns the receiving address of the message-call transaction (undefined for contract-creation transactions).
     Address destination() const { return m_destination; }
@@ -158,7 +151,7 @@ public:
     Address to() const { return m_destination; }
 
     /// Synonym for safeSender().
-    Address from() const { return safeSender(); }
+    Address from() const { return sender(); }
 
     /// @returns the senders priority fee level
     FeeLevel feeLevel() const { return m_feeLevel; }
@@ -191,8 +184,6 @@ public:
 
     void sign(Secret const& _priv);		///< Sign the transaction.
 
-	void signFromSigStruct(SignatureStruct const& sigStruct);
-
 	json toJson() const;
 
 	bool signable() const { return m_gasLimit != Invalid256 && m_maxFeePerGas != Invalid256 && m_maxPriorityFeePerGas != Invalid256; }
@@ -209,7 +200,7 @@ protected:
     static bool isZeroSignature(u256 const& _r, u256 const& _s) { return !_r && !_s; }
 
     /// Clears the signature.
-    void clearSignature() { m_vrs = SignatureStruct(); }
+    void clearSignature() { m_vrs = SignatureStruct();  m_hashWith = h256(); }
     void clearGas() { m_gasLimit = Invalid256; }
     void clearFees() { m_maxPriorityFeePerGas = Invalid256; m_maxFeePerGas = Invalid256; }
 
@@ -225,7 +216,6 @@ protected:
     u256 m_value;                       ///< The amount of ETH to be transferred by this transaction. Called "endowment" for contract-creation transactions.
     bytes m_data;                       ///< The data associated with the transaction, or the initializer if it's a creation transaction.
     AccessList m_accessList;            ///< The list of addresss and storage keys that the transaction plans to access; for more info, https://eips.ethereum.org/EIPS/eip-2930
-
     boost::optional<SignatureStruct> m_vrs;	///< The signature of the transaction. Encodes the sender.
     /// EIP155 value for calculating transaction hash
     /// https://github.com/ethereum/EIPs/blob/master/EIPS/eip-155.md

@@ -205,19 +205,21 @@ using AccessList = std::vector<AccessItem>;
 
 struct TransactionSkeleton
 {
-	bool creation = false;
 	Address from;
 	Address to;
-	u256 value;
-	bytes data;
+	u256 value = 0;
+	bytes data = {};
 	uint64_t chainId;
+
 	u256 nonce = Invalid256;
 	u256 maxPriorityFeePerGas = Invalid256;
 	u256 maxFeePerGas = Invalid256;
 	u256 gasLimit = Invalid256;
+
 	AccessList accessList = {};
 
 	json toJson() const;
+	bool isCreation() const { return to == Address(); }
 	std::string userReadable(bool _toProxy, std::function<std::pair<bool, std::string>(TransactionSkeleton const&)> const& _getNatSpec, std::function<std::string(Address const&)> const& _formatAddress) const;
 };
 

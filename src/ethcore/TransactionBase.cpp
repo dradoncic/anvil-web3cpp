@@ -157,17 +157,17 @@ json TransactionBase::toJson() const
 
     // value only if non-zero
     if (m_value != Invalid256)
-        j["value"] = dev::toHex(m_value);
+        j["value"] = Utils::toHex(m_value);
 
     // gas / fees for typed transactions
     if (m_gasLimit != Invalid256)
-        j["gas"] = dev::toHex(m_gasLimit);
+        j["gas"] = Utils::toHex(m_gasLimit);
 
     if (m_maxPriorityFeePerGas != Invalid256)
-        j["maxPriorityFeePerGas"] = dev::toHex(m_maxPriorityFeePerGas);
+        j["maxPriorityFeePerGas"] = Utils::toHex(m_maxPriorityFeePerGas);
 
     if (m_maxFeePerGas != Invalid256)
-        j["maxFeePerGas"] = dev::toHex(m_maxFeePerGas);
+        j["maxFeePerGas"] = Utils::toHex(m_maxFeePerGas);
 
     // data if present
     if (!m_data.empty())

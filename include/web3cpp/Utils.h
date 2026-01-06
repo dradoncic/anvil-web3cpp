@@ -337,13 +337,6 @@ namespace Utils {
   void writeJSONFile(json &obj, boost::filesystem::path &filePath, Error &err);
 
   /**
-   * Decode a signed transaction.
-   * @param signedTx The raw transaction signature to decode.
-   * @return A JSON object with details of the transaction.
-   */
-  json decodeRawTransaction(std::string signedTx);
-
-  /**
    * Decode AccessList object & convert to JSON.
    * @param accessList The AccessList object.
    * @return A JSON object with details of the AccessList.

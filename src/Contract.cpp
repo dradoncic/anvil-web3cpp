@@ -416,7 +416,7 @@ std::string Contract::operator() (const std::string& function, const json& argum
 
         std::string tmpStr = Utils::padLeft(Utils::toHex(boost::lexical_cast<std::string>(argument.size()/2)),64,'0');
 
-        bigfloat division = bigfloat(argument.size()) / 64;
+        dev::bigfloat division = dev::bigfloat(argument.size()) / 64;
         uint64_t multiplication = boost::lexical_cast<uint64_t>(boost::multiprecision::ceil(division));
         argument = Utils::padRight(argument, (64 * multiplication), '0');
         tmpStr += argument;
@@ -432,7 +432,7 @@ std::string Contract::operator() (const std::string& function, const json& argum
 
         std::string tmpStr = Utils::padLeft(Utils::toHex(boost::lexical_cast<std::string>(argument.size()/2)),64,'0');
 
-        bigfloat division = bigfloat(argument.size()) / 64;
+        dev::bigfloat division = dev::bigfloat(argument.size()) / 64;
         uint64_t multiplication = boost::lexical_cast<uint64_t>(boost::multiprecision::ceil(division));
         argument = Utils::padRight(argument, (64 * multiplication), '0');
         tmpStr += argument;
@@ -446,4 +446,3 @@ std::string Contract::operator() (const std::string& function, const json& argum
   ret = ret + arrToAppend;
   return ret;
 }
-

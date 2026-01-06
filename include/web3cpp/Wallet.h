@@ -26,7 +26,6 @@
 #include <web3cpp/ethcore/TransactionBase.h>
 #include <web3cpp/Error.h>
 #include <web3cpp/Account.h>
-#include <web3cpp/Cipher.h>
 #include <web3cpp/Bip39.h>
 #include <web3cpp/Provider.h>
 

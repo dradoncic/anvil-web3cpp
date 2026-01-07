@@ -1,0 +1,10 @@
+@PACKAGE_INIT@
+
+include(CMakeFindDependencyMacro)
+
+# Only find dependencies that consumers need
+find_dependency(Boost REQUIRED COMPONENTS filesystem system thread)
+find_dependency(OpenSSL REQUIRED)
+find_dependency(nlohmann_json REQUIRED)
+
+include("${CMAKE_CURRENT_LIST_DIR}/web3cppTargets.cmake")

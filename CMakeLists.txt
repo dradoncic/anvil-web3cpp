@@ -227,4 +227,33 @@ install(TARGETS web3cpp
   PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
 )
 
-install(DIRECTORY include/ DESTINATION include)
+install(
+  DIRECTORY include/
+  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+)
+
+install(
+  EXPORT web3cppTargets
+  FILE web3cppTargets.cmake
+  NAMESPACE web3cpp::
+  DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/web3cpp
+)
+
+configure_package_config_file(
+  ${CMAKE_CURRENT_SOURCE_DIR}/cmake/web3cppConfig.cmake.in
+  ${CMAKE_CURRENT_BINARY_DIR}/web3cppConfig.cmake
+  INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/web3cpp
+)
+
+write_basic_package_version_file(
+  ${CMAKE_CURRENT_BINARY_DIR}/web3cppConfigVersion.cmake
+  VERSION ${PROJECT_VERSION}
+  COMPATIBILITY SameMajorVersion
+)
+
+install(
+  FILES
+    ${CMAKE_CURRENT_BINARY_DIR}/web3cppConfig.cmake
+    ${CMAKE_CURRENT_BINARY_DIR}/web3cppConfigVersion.cmake
+  DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/web3cpp
+)

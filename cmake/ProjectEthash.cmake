@@ -1,15 +1,15 @@
 include(ExternalProject)
- 
+
 if (MSVC)
     set(_only_release_configuration -DCMAKE_CONFIGURATION_TYPES=Release)
     set(_overwrite_install_command INSTALL_COMMAND cmake --build <BINARY_DIR> --config Release --target install)
 endif()
- 
+
 set(prefix "${CMAKE_BINARY_DIR}/deps")
 set(ETHASH_LIBRARY "${prefix}/lib/${CMAKE_STATIC_LIBRARY_PREFIX}ethash${CMAKE_STATIC_LIBRARY_SUFFIX}")
 set(ETHASH_INCLUDE_DIR "${prefix}/include")
 set(ETHASH_BYPRODUCTS "${prefix}/lib/${CMAKE_STATIC_LIBRARY_PREFIX}keccak${CMAKE_STATIC_LIBRARY_SUFFIX}")
- 
+
 ExternalProject_Add(
     Ethash
     PREFIX "${prefix}"
@@ -32,7 +32,7 @@ ExternalProject_Add(
     LOG_INSTALL 1
     BUILD_BYPRODUCTS "${ETHASH_BYPRODUCTS}"
 )
- 
+
 # Create imported library
 add_library(ethash STATIC IMPORTED GLOBAL)
 file(MAKE_DIRECTORY "${ETHASH_INCLUDE_DIR}")  # Must exist.

@@ -112,10 +112,10 @@ inline bytesSec decryptSymNoAuth(SecureFixedHash<32> const& _k, h128 const& _iv,
 
 /// Recovers Public key from signed message hash.
 Public recover(Signature const& _sig, h256 const& _hash);
-    
+
 /// Returns siganture of message hash.
 Signature sign(Secret const& _k, h256 const& _hash);
-    
+
 /// Verify signature.
 bool verify(Public const& _k, Signature const& _s, h256 const& _hash);
 
@@ -174,9 +174,9 @@ h256 kdf(Secret const& _priv, h256 const& _hash);
  * @brief Generator for non-repeating nonce material.
  * The Nonce class should only be used when a non-repeating nonce
  * is required and, in its current form, not recommended for signatures.
- * This is primarily because the key-material for signatures is 
- * encrypted on disk whereas the seed for Nonce is not. 
- * Thus, Nonce's primary intended use at this time is for networking 
+ * This is primarily because the key-material for signatures is
+ * encrypted on disk whereas the seed for Nonce is not.
+ * Thus, Nonce's primary intended use at this time is for networking
  * where the key is also stored in plaintext.
  */
 class Nonce

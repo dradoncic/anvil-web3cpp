@@ -11,7 +11,6 @@
 #include <web3cpp/Wallet.h>
 #include <web3cpp/Account.h>
 
-#include "version.h"
 
 /**
  * Main/Umbrella class for %Web3.

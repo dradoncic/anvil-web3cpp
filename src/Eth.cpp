@@ -1,3 +1,4 @@
+#include "web3cpp/RPC.h"
 #include <web3cpp/Eth.h>
 
 std::future<json> Eth::getProtocolVersion() {
@@ -339,6 +340,46 @@ std::future<json> Eth::getTransactionCount(
     return ret;
   });
 }
+
+std::future<json> Eth::feeHistory(
+    uint64_t blockCount, const std::string& defaultBlock,
+    const std::vector<uint64_t>& rewardPercentile
+)
+{
+    return std::async([=]{
+      json ret;
+      Error err;
+      std::string rpcStr = RPC::eth_feeHistory(
+          blockCount, ((!defaultBlock.empty()) ? defaultBlock : this->defaultBlock),
+          rewardPercentile, err
+      ).dump();
+      if (err.getCode() != 0) ret["error"]["message"] = err.what();
+      else {
+          ret = json::parse(Net::HTTPRequest(
+              this->provider, Net::RequestTypes::POST, rpcStr
+          ));
+      }
+      return ret;
+    });
+}
+
+std::future<json> Eth::maxPriorityFeePerGas()
+{
+    return std::async([=]{
+      json ret;
+      Error err;
+      std::string rpcStr = RPC::eth_maxPriorityFeePerGas().dump();
+      if (err.getCode() !=  0) ret["error"]["message"] = err.what();
+      else {
+          ret = json::parse(Net::HTTPRequest(
+              this->provider, Net::RequestTypes::POST, rpcStr
+          ));
+      }
+      return ret;
+    });
+}
+
+
 
 std::future<json> Eth::sign(std::string dataToSign, const std::string& address) {
   if (!Utils::isHex(dataToSign)) { dataToSign = Utils::utf8ToHex(dataToSign); }

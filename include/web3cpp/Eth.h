@@ -246,27 +246,30 @@ class Eth {
      * Get the maxPriorityFeePerGas.
      * @return The current maxPriorityFeePerGase in wei.
      */
-    std::future<json> getMaxPriorityFeePeGas();
+    std::future<json> maxPriorityFeePerGas();
 
-    /**
-     * Drop all transactions from the mempool.
-     * @return A JSON object with the send results (either "result" or "error")
-     */
-    std::future<json> dropAllTransactions();
+    // /**
+    //  * Drop all transactions from the mempool.
+    //  * @return A JSON object with the send results (either "result" or "error")
+    //  */
+    //  // NOTE (this should not be in ETH)
+    // std::future<json> dropAllTransactions();
 
-    /**
-     * Set minimum gas price.
-     * @param gas The amount of gas (WEI)
-     * @return A JSON object with the send results (either "result" or "error")
-     */
-    std::future<json> setMinGasPrice(BigNumber gas);
+    // /**
+    //  * Set minimum gas price.
+    //  * @param gas The amount of gas (WEI)
+    //  * @return A JSON object with the send results (either "result" or "error")
+    //  */
+    //  // NOTE (this should not be in ETH)
+    // std::future<json> setMinGasPrice(BigNumber gas);
 
-    /**
-     * Set next block base fee per gas.
-     * @param The amount of gas (WEI)
-     * @return A JSON object with the send results (either "result" or "error")
-     */
-    std::future<json> setNextBlockBaseFeePerGas(BigNumber gas);
+    // /**
+    //  * Set next block base fee per gas.
+    //  * @param The amount of gas (WEI)
+    //  * @return A JSON object with the send results (either "result" or "error")
+    //  */
+    //  // NOTE (this should not be in ETH)
+    // std::future<json> setNextBlockBaseFeePerGas(BigNumber gas);
 
     /**
      * Sign data using a specific account.
@@ -328,17 +331,19 @@ class Eth {
       std::string nonce, std::string powHash, std::string digest
     );
 
-    /**
-     * Fetch number of transactions currently pending for inclusion in the next block.
-     * @return Pending & queued counter of transactions.
-     */
-    std::future<json> txPoolStatus();
+    // /**
+    //  * Fetch number of transactions currently pending for inclusion in the next block.
+    //  * @return Pending & queued counter of transactions.
+    //  */
+    //  // NOTE (this should not be in ETH)
+    // std::future<json> txPoolStatus();
 
-    /**
-     * List the exact details of all the transactions currently pending for inclusion in the next block.
-     * @return Pending & queued list of transactions.
-     */
-    std::future<json> txPoolContent();
+    // /**
+    //  * List the exact details of all the transactions currently pending for inclusion in the next block.
+    //  * @return Pending & queued list of transactions.
+    //  */
+    //  // NOTE (this should not be in ETH)
+    // std::future<json> txPoolContent();
 
     /**
      * Get the chain ID of the current provider.

@@ -54,6 +54,9 @@ class Error {
      * \arg \c 33 - **JSON File Does Not Exist**
      * \arg \c 34 - **JSON File Read %Error**
      * \arg \c 35 - **JSON File Write %Error**
+     * \arg \c 36 - **Transaction Estimate Error**
+     * \arg \c 37 - **Transaction Drop Error**
+     * \arg \c 38 - **Invalid Reward Percentiles**
      * \arg \c 999 - **Unknown %Error**
      */
     static const std::map<uint64_t, std::string> codeMap;

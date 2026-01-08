@@ -183,7 +183,7 @@ std::string Utils::toHex(const std::string& value) {
 
 std::string Utils::toHex(BigNumber value) {
   std::stringstream ss;
-  ss << std::hex << value;
+  ss << std::showbase << std::hex << value;
   return ss.str();
 }
 

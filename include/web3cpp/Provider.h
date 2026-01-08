@@ -27,6 +27,7 @@ class Provider {
     uint64_t chainId;         ///< The chain ID of the provider.
     std::string currency;     ///< The currency the provider uses.
     std::string explorerUrl;  ///< The block explorer URL the provider uses.
+    std::string protocol;     ///< The protocol for the connection (HTTP/HTTPS)
 
     /**
      * A JSON object with predefined provider templates.
@@ -66,7 +67,7 @@ class Provider {
      */
     Provider(
       std::string name, std::string host, std::string target, uint64_t port,
-      uint64_t chainId, std::string currency, std::string explorerUrl
+      uint64_t chainId, std::string currency, std::string explorerUrl, std::string protocol = "http"
     );
 
     const std::string& getName()        const { return this->name; }                ///< Getter for provider name.
@@ -77,6 +78,7 @@ class Provider {
     const std::string& getCurrency()    const { return this->currency; }        ///< Getter for provider currency.
     const std::string& getExplorerUrl() const { return this->explorerUrl; }  ///< Getter for provider block explorer URL.
     const static json& getPresets()           { return Provider::presets; }      ///< Getter for provider presets.
+    const std::string& getProtocol()     const { return this->protocol;  }       ///< Getter for the protocol.
 
     friend class Web3;
 };

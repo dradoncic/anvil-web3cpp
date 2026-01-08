@@ -67,6 +67,14 @@ namespace RPC {
    */
   bool _checkDefaultBlock(const std::string& block);
 
+  /**
+   * Check if a given vector is a valid rewardPercentile.
+   * A "valid rewardPercentile" is a montonicall increasing list, [0, 100] of unsigned integers.
+   * @param rewardPercentiles The list of reward percentiles.
+   * @return 'true' if rewardPercentiles is valid, 'false' otherwise
+   */
+  bool _checkRewardPercentiles(const std::vector<uint64_t>& rewardPercentiles);
+
   json web3_clientVersion(); ///< Build data for `web3_clientVersion`.
 
   /**
@@ -349,9 +357,8 @@ namespace RPC {
 
   /**
    * Returns the current maxPriorityFeePerGas in wei.
-   * @param &err Error object.
    */
-  json eth_getMaxPriorityFeePerGas(Error &err);
+  json eth_maxPriorityFeePerGas();
 
   /*
    * Transaction fee history.
@@ -380,16 +387,8 @@ namespace RPC {
 
   /**
    * Removes all transactions from the pool.
-   * @param &err Error object.
    */
-  json anvil_dropAllTransactions(Error &err);
-
-  /**
-   * Set the minimum gas price for the node.
-   * @param gasPrice The gas price.
-   * @param &err Error object.
-   */
-  json anvil_setMinGasPrice(BigNumber gasPrice, Error &err);
+  json anvil_dropAllTransactions();
 
   /**
    * Sets the base fee of the next block.
@@ -415,28 +414,17 @@ namespace RPC {
   json anvil_addBalance(const std::string& address, BigNumber amount, Error &err);
 
   /**
-   * Deals desired ERC20 to/from an account.
-   * @param tokenAddress The contract address.
-   * @param address The account address.
-   * @param amount The amount to add/remove from the account.
-   * @param &err Error object.
-   */
-  json anvil_dealERC20(const std::string& tokenAddress, BigNumber amount, Error &err);
-
-  /**
    * Query the number of transactions currently pending for inclusion in the next
    * block, as weel as the ones that are being scheduled for future execution.
-   * @param &err Error object.
    */
-  json geth_txPoolStatus(Error &err);
+  json geth_txPoolStatus();
 
   /**
    * Queryr the list of exact details of all transactions currently pending
    * for  inclusion in the next block, as weel as the ones that are being
-   * schedules for future execution.
-   * @param &err Error object.
+   * schedules for future execution..
    */
-  json geth_txPoolContent(Error &err);
+  json geth_txPoolContent();
 };
 
 #endif  // RPC_H

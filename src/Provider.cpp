@@ -9,6 +9,7 @@ json Provider::presets = {
     {"chainId", 43114},
     {"currency", "AVAX"},
     {"explorerUrl", "https://snowtrace.io"},
+    {"protocol", "https"}
   }},
   {"avax-c-test", {
     {"name", "Avalanche Testnet (C-Chain)"},
@@ -18,6 +19,7 @@ json Provider::presets = {
     {"chainId", 43113},
     {"currency", "AVAX"},
     {"explorerUrl", "https://testnet.snowtrace.io"},
+    {"protocol", "https"}
   }}
 };
 
@@ -29,6 +31,7 @@ void Provider::_setData(json data) {
   this->chainId = data["chainId"].get<uint64_t>();
   this->currency = data["currency"].get<std::string>();
   this->explorerUrl = data["explorerUrl"].get<std::string>();
+  this->protocol = data["protocol"].get<std::string>();
 }
 
 Provider::Provider(std::string id) {
@@ -43,19 +46,21 @@ Provider::Provider(std::string id) {
 Provider::Provider(const Provider &p) :
   _id(p._id),
   name(p.name), host(p.host), target(p.target), port(p.port),
-  chainId(p.chainId), currency(p.currency), explorerUrl(p.explorerUrl)
+  chainId(p.chainId), currency(p.currency), explorerUrl(p.explorerUrl),
+  protocol(p.protocol)
  {}
 
 Provider::Provider(
   std::string name, std::string host, std::string target, uint64_t port,
-  uint64_t chainId, std::string currency, std::string explorerUrl)
+  uint64_t chainId, std::string currency, std::string explorerUrl, std::string protocol)
   : name(name), host(host), target(target), port(port), chainId(chainId),
-  currency(currency), explorerUrl(explorerUrl) { }
+  currency(currency), explorerUrl(explorerUrl), protocol(protocol) { }
 
 void Provider::setProvider(const Provider &p) {
   json pJ = {
     {"name", p.name}, {"host", p.host}, {"target", p.target}, {"port", p.port},
-    {"chainId", p.chainId}, {"currency", p.currency}, {"explorerUrl", p.explorerUrl}
+    {"chainId", p.chainId}, {"currency", p.currency}, {"explorerUrl", p.explorerUrl},
+    {"protocol", p.protocol}
   };
   this->_setData(pJ);
 };

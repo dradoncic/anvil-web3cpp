@@ -152,19 +152,31 @@ bool Utils::checkAddressChecksum(std::string address) {
   if (address.substr(0, 2) == "0x" || address.substr(0, 2) == "0X") {
     address = address.substr(2);
   }
-  std::string hash = dev::toHex(dev::sha3(
-    Utils::toLowercaseAddress(address).substr(2)
+
+  if (address.length() != 40) return false;
+
+  std::string lower = Utils::toLowercaseAddress(address);
+
+  std::string hash = dev::toHex(dev::sha3(lower.substr(2)
   ));
+
   for (int i = 0; i < address.length(); i++) {
-    if (!std::isdigit(address[i])) {  // Only check A-F
-      int nibble = std::stoi(hash.substr(i, 1), nullptr, 16);
-      if (
-        (nibble >= 8 && !std::isupper(address[i])) ||
-        (nibble < 8 && !std::islower(address[i]))
-      ) {
-        return false;
+      unsigned char c = static_cast<unsigned char>(address[i]);
+
+      if (std::isdigit(c)) continue;
+
+      int nibble = (hash[i] <= '9')
+        ? hash[i] - '0'
+        : std::tolower(hash[i]) - 'a' + 10;
+
+      bool shouldBeUpper = nibble >= 8;
+      bool isUpper = std::isupper(c);
+      bool isLower = std::islower(c);
+
+      if ((shouldBeUpper && !isUpper) ||
+            (!shouldBeUpper && !isLower)) {
+            return false;
       }
-    }
   }
   return true;
 }

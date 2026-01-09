@@ -47,7 +47,6 @@ void Error::setCode(uint64_t errorCode) {
   this->lock.lock();
   if (isSet) {
     this->lock.unlock();
-    std::cout << "Error already set" << std::endl;
     return;
   };
   auto match = codeMap.find(errorCode);

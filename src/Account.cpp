@@ -49,19 +49,19 @@ std::future<BigNumber> Account::addBalance(BigNumber amount) const
     BigNumber ret;
     std::string addBalanceRequestStr = Net::HTTPRequest(
         this->provider, Net::RequestTypes::POST,
-        RPC::anvil_addBalance(this->_address, amount, error).dump()
+        RPC::anvil_addBalance(_address, amount, error).dump()
     );
     if (error.getCode() != 0) {
-        std::cout << "Error on adding balance for account " << this->_address
+        std::cout << "Error on adding balance for account " << _address
           << ": " << error.what() << std::endl;
         return ret;
     }
     std::string balanceRequestStr = Net::HTTPRequest(
       this->provider, Net::RequestTypes::POST,
-      RPC::eth_getBalance(this->_address, "latest", error).dump()
+      RPC::eth_getBalance(_address, "latest", error).dump()
     );
     if (error.getCode() != 0) {
-      std::cout << "Error on getting balance for account " << this->_address
+      std::cout << "Error on getting balance for account " << _address
         << ": " << error.what() << std::endl;
       return ret;
     }

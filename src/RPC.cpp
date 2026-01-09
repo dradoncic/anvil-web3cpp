@@ -571,7 +571,7 @@ json RPC::eth_feeHistory(uint64_t blockCount, const std::string& defaultBlock, s
 
 json RPC::anvil_dropTransaction(const std::string& transactionHash, Error &err)
 {
-  int errCode;
+  int errCode = 0;
   [&](){
     if (!_checkHexData(transactionHash)) { errCode = 4; return; }
     if (!_checkHexLength(transactionHash, 32)) { errCode = 6; return; }
@@ -588,14 +588,14 @@ json RPC::anvil_dropAllTransactions()
 
 json RPC::anvil_setNextBlockBaseFeePerGas(BigNumber baseFee, Error &err)
 {
-    int errCode;
+    int errCode = 0;
     auto _baseFee = Utils::toHex(baseFee);
     return _buildJSON("anvil_setNextBlockBaseFeePerGas", {_baseFee});
 }
 
 json RPC::anvil_setBalance(const std::string& address, BigNumber balance, Error &err)
 {
-    int errCode;
+    int errCode = 0;
     auto _balance = Utils::toHex(balance);
     [&](){
       if (!_checkAddress(address)) { errCode = 5; return;  }
@@ -607,7 +607,7 @@ json RPC::anvil_setBalance(const std::string& address, BigNumber balance, Error 
 
 json RPC::anvil_addBalance(const std::string& address, BigNumber balance, Error &err)
 {
-    int errCode;
+    int errCode = 0;
     auto _balance = Utils::toHex(balance);
     [&](){
       if (!_checkAddress(address)) { errCode = 5; return;  }

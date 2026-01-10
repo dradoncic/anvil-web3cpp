@@ -102,7 +102,7 @@ Wallet::Estimations Wallet::fetchEstimations(json& txObj)
         );
         json reqJson = json::parse(req);
 
-        if (reqJson.count("error")) return {dev::Invalid256, 36};
+        if (reqJson.contains("error")) return {dev::Invalid256, 36};
         return {Utils::toBN(reqJson["result"].get<std::string>()), 0};
     });
 
@@ -110,15 +110,15 @@ Wallet::Estimations Wallet::fetchEstimations(json& txObj)
         Error rpcErr;
         std::string rpcStr = RPC::eth_feeHistory(
             5, "latest", {10, 50, 90}, rpcErr
-        );
-        if (rpcErr.getCode() != 0) return {json{}, 36};
+        ).dump();
 
+        if (rpcErr.getCode() != 0) return {json{}, 36};
         std::string req = Net::HTTPRequest(
             this->provider, Net::RequestTypes::POST , rpcStr
         );
         json reqJson = json::parse(req);
 
-        if (reqJson.count("error")) return {json{}, 36};
+        if (reqJson.contains("error")) return {json{}, 36};
         return {reqJson, 0};
     });
 
@@ -133,6 +133,7 @@ Wallet::Estimations Wallet::fetchEstimations(json& txObj)
         estim.errorCode = gasRes.second != 0 ? gasRes.second : feeRes.second;
         return estim;
     }
+
     return estim;
 }
 
@@ -169,6 +170,7 @@ dev::eth::TransactionBase Wallet::estimateTransaction(
 
     txObj.setGas(res.gas);
     txObj.setFees(res.feeHistory);
+    error.setCode(0);
 
     return txObj;
 }
@@ -209,7 +211,7 @@ std::future<json> Wallet::sendTransaction(std::string signedTx, Error &error)
         json reqJson = json::parse(req);
 
         txResult["signature"] = signedTx;
-        if (reqJson.count("error")) {
+        if (reqJson.contains("error")) {
             txResult["error"] = reqJson;
             error.setCode(13);
         } else {
@@ -238,7 +240,7 @@ std::future<json> Wallet::dropTransaction(std::string transactionHash, Error &er
         json reqJson = json::parse(req);
 
         txResult["hash"] = transactionHash;
-        if (reqJson.count("error")) {
+        if (reqJson.contains("error")) {
             txResult["error"] = reqJson;
             error.setCode(37);
         } else {

@@ -291,16 +291,16 @@ json RPC::eth_estimateGas(const json& callObject, Error &err) {
       !_checkAddress(callObject["from"]) ||
       (callObject.count("to") && !_checkAddress(callObject["to"]))
     ) { errCode = 5; return; } // Invalid Address
-    if (
-      !_checkHexData(callObject["data"]) ||
-      (callObject.count("gas") && !_checkHexData(callObject["gas"])) ||
-      (callObject.count("gasPrice") && !_checkHexData(callObject["gasPrice"])) ||
-      (callObject.count("value") && !_checkHexData(callObject["value"]))
-    ) { errCode = 4; return; } // Invalid Hex Data
+
+    for (const auto& field : {"data", "value", "gas", "maxFeePerGas", "maxPriorityFeePerGas"}) {
+        if (callObject.contains(field) && !_checkHexData(callObject[field])) {
+            err.setCode(4); return; // Invalid Hex Data
+        }
+    }
   }();
   err.setCode(errCode);
   return (err.getCode() != 0) ? json::object()
-    : _buildJSON("eth_estimateGas", {callObject});
+    : _buildJSON("eth_estimateGas", {json::array({callObject})});
 }
 
 json RPC::eth_getBlockByHash(const std::string& hash, bool returnTransactionObjects, Error &err) {

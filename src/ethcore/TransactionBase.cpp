@@ -82,7 +82,7 @@ void TransactionBase::streamRLP(RLPStream& _s, IncludeSignature _sig) const
     {
         case EIP1559:
         {
-            payload.appendList(_sig ? 11 : 8);
+            payload.appendList(_sig ? 12 : 9);
             payload << m_chainId
                     << m_nonce
                     << m_maxPriorityFeePerGas
@@ -149,11 +149,11 @@ json TransactionBase::toJson() const
 
     // from is always required
     if (safeSender() != Address())
-        j["from"] = dev::toHex(safeSender());
+        j["from"] = "0x" + dev::toHex(safeSender());
 
     // to only for message-call transactions
     if (m_function == MessageCall && m_destination != Address())
-        j["to"] = dev::toHex(m_destination);
+        j["to"] = "0x" + dev::toHex(m_destination);
 
     // value only if non-zero
     if (m_value != Invalid256)
@@ -171,7 +171,7 @@ json TransactionBase::toJson() const
 
     // data if present
     if (!m_data.empty())
-        j["data"] = dev::toHex(m_data);
+        j["data"] = "0x" + dev::toHex(m_data);
 
     // chainId if set
     if (m_chainId != 0)

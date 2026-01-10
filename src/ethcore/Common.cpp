@@ -155,10 +155,10 @@ json TransactionSkeleton::toJson() const
 {
     json j;
 
-    if (this->from != Address())       j["from"] = dev::toHex(this->from);
-    if (this->to != Address())         j["to"] = dev::toHex(this->to);
+    if (this->from != Address())       j["from"] = "0x" + dev::toHex(this->from);
+    if (this->to != Address())         j["to"] = "0x" + dev::toHex(this->to);
     if (this->value != 0)              j["value"] = Utils::toHex(this->value);
-    if (!this->data.empty())          j["data"] = dev::toHex(this->data);
+    if (!this->data.empty())          j["data"] = "0x" + dev::toHex(this->data);
     if (this->chainId != 0)           j["chainId"] = Utils::toHex(this->chainId);
     if (this->nonce != Invalid256)    j["nonce"] = Utils::toHex(this->nonce);
     if (this->maxPriorityFeePerGas != Invalid256) j["maxPriorityFeePerGas"] = Utils::toHex(this->maxPriorityFeePerGas);

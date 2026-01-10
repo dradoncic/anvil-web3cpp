@@ -39,6 +39,8 @@ enum class CheckTransaction
 
 enum Type
 {
+    Legacy,
+    EIP2930,
     EIP1559,
     EIP4844,
     EIP7702

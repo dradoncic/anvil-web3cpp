@@ -141,6 +141,21 @@ namespace Solidity {
    * @param func (optional) The full function signature to be packed, if it exists.
    */
   std::string packMulti(const json& args, Error &err, const std::string& func = "");
+
+  /**
+   * Checks whether a type is any size unsigned integer.
+   * @param &type Type of the argument.
+   * @return 'true' if unsigned integer, 'false' otherwise
+   */
+  bool isUInt(const std::string& type);
+
+  /**
+   * Checks whether a type is any size unsigned integer array.
+   * @param &type Type of the argument.
+   * @return 'true' if unsigned integer array, 'false' otherwise
+   */
+  bool isUIntArr(const std::string& type);
+
 };
 
 #endif  // SOLIDITY_H

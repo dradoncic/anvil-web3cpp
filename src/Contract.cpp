@@ -62,7 +62,17 @@ Contract::Contract(const json& jsonInterface, const std::string& address, json o
         Types argType;
         std::string argTypeStr = arguments["type"].get<std::string>();
         functionAll += argTypeStr + ",";
-        if (argTypeStr == "uint256") argType = Types::uint256;
+        if (argTypeStr == "uint8") argType = Types::uint8;
+        else if (argTypeStr == "uint8[]") argType = Types::uint8Arr;
+        else if (argTypeStr == "uint16") argType = Types::uint16;
+        else if (argTypeStr == "uint16[]") argType = Types::uint16Arr;
+        else if (argTypeStr == "uint32") argType = Types::uint32;
+        else if (argTypeStr == "uint32[]") argType = Types::uint32Arr;
+        else if (argTypeStr == "uint64") argType = Types::uint64;
+        else if (argTypeStr == "uint64Arr") argType = Types::uint64Arr;
+        else if (argTypeStr == "uint128") argType = Types::uint128;
+        else if (argTypeStr == "uin128[]") argType = Types::uint128Arr;
+        else if (argTypeStr == "uint256") argType = Types::uint256;
         else if (argTypeStr == "uint256[]") argType = Types::uint256Arr;
         else if (argTypeStr == "address") argType = Types::address;
         else if (argTypeStr == "address[]") argType = Types::addressArr;
@@ -73,11 +83,7 @@ Contract::Contract(const json& jsonInterface, const std::string& address, json o
         else if (argTypeStr == "string") argType = Types::string;
         else if (argTypeStr == "string[]") argType = Types::stringArr;
         else {
-          // All uints (128, 64, etc.) are encoded the same way
-          if (argTypeStr.find("uint") != std::string::npos) {
-            argType = (argTypeStr.find("[]") != std::string::npos)
-              ? Types::uint256Arr : Types::uint256;
-          } else if (argTypeStr.find("bytes") != std::string::npos) {
+            if (argTypeStr.find("bytes") != std::string::npos) {
             argType = (argTypeStr.find("[]") != std::string::npos)
               ? Types::bytesArr : Types::bytes;
           }
@@ -93,10 +99,31 @@ Contract::Contract(const json& jsonInterface, const std::string& address, json o
 
 bool Contract::isTypeArray(Types const &type) {
   return (
-    type == Types::uint256Arr || type == Types::addressArr ||
-    type == Types::booleanArr || type == Types::bytesArr ||
-    type == Types::stringArr
+    type == Types::uint8Arr ||type == Types::uint16Arr ||
+    type == Types::uint32Arr || type == Types::uint64Arr ||
+    type == Types::uint128Arr ||type == Types::uint256Arr ||
+    type == Types::addressArr ||type == Types::booleanArr ||
+    type == Types::bytesArr ||type == Types::stringArr
   );
+}
+
+bool Contract::isTypeUIntArr(Types const& type)
+{
+    return (
+      type == Types::uint8Arr ||type == Types::uint16Arr ||
+      type == Types::uint32Arr || type == Types::uint64Arr ||
+      type == Types::uint128Arr ||type == Types::uint256Arr
+    );
+}
+
+
+bool Contract::isTypeUInt(Types const& type)
+{
+    return (
+      type == Types::uint8 ||type == Types::uint16 ||
+      type == Types::uint32 || type == Types::uint64 ||
+      type == Types::uint128 ||type == Types::uint256
+    );
 }
 
 Contract Contract::clone() {
@@ -125,6 +152,16 @@ std::string Contract::operator() (const json& arguments, const std::string& func
   std::vector<std::string> funcTypes;
   for (Types t : _methods[function]) {
     switch (t) {
+      case Types::uint8: funcTypes.push_back("uint8"); break;
+      case Types::uint8Arr: funcTypes.push_back("uint8[]"); break;
+      case Types::uint16: funcTypes.push_back("uint16"); break;
+      case Types::uint16Arr: funcTypes.push_back("uint16[]"); break;
+      case Types::uint32: funcTypes.push_back("uint32"); break;
+      case Types::uint32Arr: funcTypes.push_back("uint32[]"); break;
+      case Types::uint64: funcTypes.push_back("uint64"); break;
+      case Types::uint64Arr: funcTypes.push_back("uint64[]"); break;
+      case Types::uint128: funcTypes.push_back("uint128"); break;
+      case Types::uint128Arr: funcTypes.push_back("uint128[]"); break;
       case Types::uint256: funcTypes.push_back("uint256"); break;
       case Types::uint256Arr: funcTypes.push_back("uint256[]"); break;
       case Types::address: funcTypes.push_back("address"); break;
@@ -190,7 +227,7 @@ std::string Contract::operator() (const std::string& function, const json& argum
     bool isArray = false;
     if (isTypeArray(argType)) {
       ret += Utils::padLeft(
-        Utils::toHex(boost::lexical_cast<std::string>(array_start)), 64
+        Utils::toHex(boost::lexical_cast<std::string>(array_start), false), 64
       );
       isArray = true;
     }
@@ -200,17 +237,17 @@ std::string Contract::operator() (const std::string& function, const json& argum
       if (argType != Types::bytesArr && argType != Types::stringArr) {
         array_start += (32) + 32 * arguments[index].size();
         arrToAppend += Utils::padLeft(
-          Utils::toHex(boost::lexical_cast<std::string>(arguments[index].size())), 64
+          Utils::toHex(boost::lexical_cast<std::string>(arguments[index].size()), false), 64
         );
       }
       // Check arguments
       for (auto item : arguments[index]) {
         // Uint256[]
-        if (argType == Types::uint256Arr) {
+        if (isTypeUIntArr(argType)) {
           if (!std::all_of(item.begin(), item.end(), ::isdigit)) {
             error.setCode(20); return ""; // ABI Invalid Uint256 Array
           }
-          arrToAppend += Utils::padLeft(Utils::toHex(std::string(item)), 64);
+          arrToAppend += Utils::padLeft(Utils::toHex(std::string(item), false), 64);
         }
 
         // address[]
@@ -250,7 +287,7 @@ std::string Contract::operator() (const std::string& function, const json& argum
            * Then, put all bytes items in a string array.
            */
           std::string tmpRet = Utils::padLeft(
-            Utils::toHex(boost::lexical_cast<std::string>(arguments[index].size())), 64
+            Utils::toHex(boost::lexical_cast<std::string>(arguments[index].size()), false), 64
           );
           uint64_t bytesOffSet = 32 * arguments[index].size(); // 32 * quantity of arguments
           std::vector<std::string> bytesTmpVec;
@@ -279,7 +316,7 @@ std::string Contract::operator() (const std::string& function, const json& argum
           // Append location of each byte inside the array.
           for (auto bytes : bytesVec) {
             tmpRet += Utils::padLeft(
-              Utils::toHex(boost::lexical_cast<std::string>(bytesOffSet)), 64
+              Utils::toHex(boost::lexical_cast<std::string>(bytesOffSet), false), 64
             );
             // Offset by next item size + 32 bytes used to determine item size..
             // Round it to upper (nearest upwards 32 multiple).
@@ -291,7 +328,7 @@ std::string Contract::operator() (const std::string& function, const json& argum
           // Append the byte itself.
           for (auto bytes : bytesVec) {
             tmpRet += Utils::padLeft(
-              Utils::toHex(boost::lexical_cast<std::string>(bytes.second)), 64
+              Utils::toHex(boost::lexical_cast<std::string>(bytes.second), false), 64
             );
             for (auto rawBytes : bytes.first) {
               if(!Utils::isHex(rawBytes)) {
@@ -324,7 +361,7 @@ std::string Contract::operator() (const std::string& function, const json& argum
            * [7]:  6262626262626262626262620000000000000000000000000000000000000000 // String[1]
            */
           std::string tmpRet = Utils::padLeft(
-            Utils::toHex(boost::lexical_cast<std::string>(arguments[index].size())), 64
+            Utils::toHex(boost::lexical_cast<std::string>(arguments[index].size()), false), 64
           );
           uint64_t bytesOffSet = 32 * arguments[index].size(); // 32 * quantity of arguments
 
@@ -350,7 +387,7 @@ std::string Contract::operator() (const std::string& function, const json& argum
           // Append location of each byte inside the array.
           for (auto string : stringVec) {
             tmpRet += Utils::padLeft(
-              Utils::toHex(boost::lexical_cast<std::string>(bytesOffSet)), 64
+              Utils::toHex(boost::lexical_cast<std::string>(bytesOffSet), false), 64
             );
             // Offset by next item size + 32 bytes used to determine item size..
             // Round it to upper (nearest upwards 32 multiple).
@@ -363,7 +400,7 @@ std::string Contract::operator() (const std::string& function, const json& argum
           // Append the string itself.
           for (auto string : stringVec) {
             tmpRet += Utils::padLeft(
-              Utils::toHex(boost::lexical_cast<std::string>(string.second)), 64
+              Utils::toHex(boost::lexical_cast<std::string>(string.second), false), 64
             );
             for (auto rawString : string.first) {
               if(!Utils::isHex(rawString)) {
@@ -382,11 +419,11 @@ std::string Contract::operator() (const std::string& function, const json& argum
       // Item is not an array.
       std::string argument = arguments[index].get<std::string>();
       // uint256
-      if (argType == Types::uint256) {
+      if (isTypeUInt(argType)) {
           if (!std::all_of(argument.begin(), argument.end(), ::isdigit)) {
             error.setCode(25); return ""; // ABI Invalid Uint256
           }
-          ret += Utils::padLeft(Utils::toHex(argument), 64);
+          ret += Utils::padLeft(Utils::toHex(argument, false), 64);
       }
       // Address
       if (argType == Types::address) {
@@ -407,14 +444,14 @@ std::string Contract::operator() (const std::string& function, const json& argum
       }
       // Bytes
       if (argType == Types::bytes) {
-        ret += Utils::padLeft(Utils::toHex(boost::lexical_cast<std::string>(array_start)), 64,'0');
+        ret += Utils::padLeft(Utils::toHex(boost::lexical_cast<std::string>(array_start), false), 64,'0');
         // Append a extral 0 to argument if odd.
         argument = Utils::stripHexPrefix(argument);
         if (argument.size() % 2 == 1) {
           argument = std::string("0") + argument;
         }
 
-        std::string tmpStr = Utils::padLeft(Utils::toHex(boost::lexical_cast<std::string>(argument.size()/2)),64,'0');
+        std::string tmpStr = Utils::padLeft(Utils::toHex(boost::lexical_cast<std::string>(argument.size()/2), false),64,'0');
 
         dev::bigfloat division = dev::bigfloat(argument.size()) / 64;
         uint64_t multiplication = boost::lexical_cast<uint64_t>(boost::multiprecision::ceil(division));
@@ -426,11 +463,11 @@ std::string Contract::operator() (const std::string& function, const json& argum
       }
       // String
       if (argType == Types::string) {
-        ret += Utils::padLeft(Utils::toHex(boost::lexical_cast<std::string>(array_start)), 64,'0');
+        ret += Utils::padLeft(Utils::toHex(boost::lexical_cast<std::string>(array_start), false), 64,'0');
         // Convert string to raw hex.
         argument = Utils::stripHexPrefix(Utils::utf8ToHex(argument));
 
-        std::string tmpStr = Utils::padLeft(Utils::toHex(boost::lexical_cast<std::string>(argument.size()/2)),64,'0');
+        std::string tmpStr = Utils::padLeft(Utils::toHex(boost::lexical_cast<std::string>(argument.size()/2), false),64,'0');
 
         dev::bigfloat division = dev::bigfloat(argument.size()) / 64;
         uint64_t multiplication = boost::lexical_cast<uint64_t>(boost::multiprecision::ceil(division));

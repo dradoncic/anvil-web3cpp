@@ -186,10 +186,10 @@ namespace Utils {
    * @param value The value to convert.
    * @return The converted hex value string.
    */
-  std::string toHex(const std::string&value);
+  std::string toHex(const std::string &value, bool prefixed = true);
 
   /// Overload of toHex() that takes a BigNumber as value.
-  std::string toHex(BigNumber value);
+  std::string toHex(BigNumber value, bool prefixed = true);
 
   /**
    * Strip the "0x" prefix from a hex string.

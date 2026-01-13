@@ -400,7 +400,7 @@ public:
     RLPStream& append(std::string const& _s) { return append(bytesConstRef(_s)); }
     RLPStream& append(char const* _s) { return append(std::string(_s)); }
     RLPStream& append(eth::AccessItem _s) { appendList(2); append(_s.address); return append(_s.storageKeys); }
-    template <unsigned N> RLPStream& append(FixedHash<N> _s, bool _compact = false, bool _allOrNothing = false) { return _allOrNothing && !_s ? append(bytesConstRef()) : append(_s.ref(), _compact); }
+    template <unsigned N> RLPStream& append(FixedHash<N> _s, bool _compact = false, bool _allOrNothing = true) { return _allOrNothing && !_s ? append(bytesConstRef()) : append(_s.ref(), _compact); }
 
     /// Appends an arbitrary RLP fragment - this *must* be a single item unless @a _itemCount is given.
     RLPStream& append(RLP const& _rlp, size_t _itemCount = 1) { return appendRaw(_rlp.data(), _itemCount); }

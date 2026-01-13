@@ -181,21 +181,21 @@ bool Utils::checkAddressChecksum(std::string address) {
   return true;
 }
 
-std::string Utils::toHex(const std::string& value) {
+std::string Utils::toHex(const std::string& value, bool prefixed) {
   std::stringstream ss;
   if (std::all_of(value.begin(), value.end(), ::isdigit)) { // Number string
-    return toHex(boost::lexical_cast<dev::u256>(value));
+    return toHex(boost::lexical_cast<dev::u256>(value), prefixed);
   } else {  // Text string
     for (int i = 0; i < value.length(); i++) {
       ss << std::hex << (int)value[i];
     }
   }
-  return ss.str();
+  return prefixed ? "0x" + ss.str() : ss.str();
 }
 
-std::string Utils::toHex(BigNumber value) {
+std::string Utils::toHex(BigNumber value, bool prefixed) {
   std::stringstream ss;
-  ss << std::showbase << std::hex << value;
+  prefixed ? ss << std::showbase << std::hex << value : ss << std::hex << value;
   return ss.str();
 }
 

@@ -28,6 +28,11 @@ class Contract {
   private:
     /// Enum for parsing Solidity variable types.
     enum Types {
+      uint8, uint8Arr,
+      uint16, uint16Arr,
+      uint32, uint32Arr,
+      uint64,  uint64Arr,
+      uint128, uint128Arr,
       uint256, uint256Arr,
       address, addressArr,
       boolean, booleanArr,
@@ -41,6 +46,20 @@ class Contract {
      * @return `true` if type is array, `false` otherwise.
      */
     bool isTypeArray(Types const &type);
+
+    /**
+     * Check if a given type is an unsigned integer.
+     * @param  &type Type value that will be checked.
+     * @return 'true' if type is unsigned integer, 'false' otherwise.
+     */
+    bool isTypeUInt(Types const &type);
+
+    /**
+     * Check if a given type is an unsigned integer array.
+     * @param &type Type value that will be checked.
+     * @return 'true' if type is unsigned integer array, 'false' otherwise.
+     */
+    bool isTypeUIntArr(Types const& type);
 
     /**
      * List of methods from the contract, as key and value pairs.

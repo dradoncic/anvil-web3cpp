@@ -13,9 +13,9 @@ bool Solidity::checkType(const std::string& type, const json& value, Error &err)
     while ((pos = hdr.find(",")) != std::string::npos) {
       std::string hdrType = hdr.substr(0, pos);
       if (
-        hdrType != "uint256" && hdrType != "address" &&
+        !isUInt(hdrType) && hdrType != "address" &&
         hdrType != "bool" && hdrType != "bytes" &&
-        hdrType != "string" && hdrType != "uint256[]" &&
+        hdrType != "string" && !isUIntArr(hdrType) &&
         hdrType != "address[]" && hdrType != "bool[]" &&
         hdrType != "bytes[]" && hdrType != "string[]"
       ) {
@@ -24,7 +24,7 @@ bool Solidity::checkType(const std::string& type, const json& value, Error &err)
       hdr.erase(0, pos + 1);
     }
     err.setCode(0); return true;
-  } else if (type == "uint256") {
+  } else if (isUInt(type)) {
     std::string it = value.get<std::string>();
     if (!std::all_of(it.begin(), it.end(), ::isdigit)) {
       err.setCode(25); return false; // ABI Invalid Uint256
@@ -53,7 +53,7 @@ bool Solidity::checkType(const std::string& type, const json& value, Error &err)
       err.setCode(29); return false; // ABI Invalid String
     }
     err.setCode(0); return true;
-  } else if (type == "uint256[]") {
+  } else if (isUIntArr(type)) {
     for (json item : value) {
       std::string it = item.get<std::string>();
       if (!std::all_of(it.begin(), it.end(), ::isdigit)) {
@@ -101,7 +101,7 @@ std::string Solidity::packFunction(const std::string& func) {
 }
 
 std::string Solidity::packUint(const std::string& num) {
-  return Utils::padLeft(Utils::toHex(num), 64);
+  return Utils::padLeft(Utils::toHex(num, false), 64);
 }
 
 std::string Solidity::packAddress(const std::string& add) {
@@ -122,8 +122,8 @@ std::string Solidity::packBytes(const std::string& hex) {
   std::string hexStrip, hexOffset, hexLength, hexData = "";
   int padding = 0;
   hexStrip = Utils::stripHexPrefix(hex);
-  hexOffset = Utils::padLeft(Utils::toHex(32), 64);
-  hexLength = Utils::padLeft(Utils::toHex(hexStrip.length() / 2), 64);
+  hexOffset = Utils::padLeft(Utils::toHex(32, false), 64);
+  hexLength = Utils::padLeft(Utils::toHex(hexStrip.length() / 2, false), 64);
   do { padding += 64; } while (padding < hexStrip.length());
   hexData = Utils::padRight(hexStrip, padding);
   return hexOffset + hexLength + hexData;
@@ -133,8 +133,8 @@ std::string Solidity::packString(const std::string& str) {
   std::string strStrip, strOffset, strLength, strData = "";
   int padding = 0;
   strStrip = Utils::stripHexPrefix(Utils::utf8ToHex(str));
-  strOffset = Utils::padLeft(Utils::toHex(32), 64);
-  strLength = Utils::padLeft(Utils::toHex(strStrip.length() / 2), 64);
+  strOffset = Utils::padLeft(Utils::toHex(32, false), 64);
+  strLength = Utils::padLeft(Utils::toHex(strStrip.length() / 2, false), 64);
   do { padding += 64; } while (padding < strStrip.length());
   strData = Utils::padRight(strStrip, padding);
   return strOffset + strLength + strData;
@@ -142,18 +142,18 @@ std::string Solidity::packString(const std::string& str) {
 
 std::string Solidity::packUintArray(const std::vector<std::string> numV) {
   std::string arrOffset, arrSize, arrData = "";
-  arrOffset = Utils::padLeft(Utils::toHex(32), 64);
-  arrSize = Utils::padLeft(Utils::toHex(numV.size()), 64);
+  arrOffset = Utils::padLeft(Utils::toHex(32, false), 64);
+  arrSize = Utils::padLeft(Utils::toHex(numV.size(), false), 64);
   for (std::string num : numV) {
-    arrData += Utils::padLeft(Utils::toHex(num), 64);
+    arrData += Utils::padLeft(Utils::toHex(num, false), 64);
   }
   return arrOffset + arrSize + arrData;
 }
 
 std::string Solidity::packAddressArray(const std::vector<std::string> addV) {
   std::string arrOffset, arrSize, arrData = "";
-  arrOffset = Utils::padLeft(Utils::toHex(32), 64);
-  arrSize = Utils::padLeft(Utils::toHex(addV.size()), 64);
+  arrOffset = Utils::padLeft(Utils::toHex(32, false), 64);
+  arrSize = Utils::padLeft(Utils::toHex(addV.size(), false), 64);
   for (std::string add : addV) {
     arrData += Utils::padLeft(
       Utils::stripHexPrefix(Utils::toLowercaseAddress(add))
@@ -164,8 +164,8 @@ std::string Solidity::packAddressArray(const std::vector<std::string> addV) {
 
 std::string Solidity::packBoolArray(const std::vector<std::string> bV) {
   std::string arrOffset, arrSize, arrData = "";
-  arrOffset = Utils::padLeft(Utils::toHex(32), 64);
-  arrSize = Utils::padLeft(Utils::toHex(bV.size()), 64);
+  arrOffset = Utils::padLeft(Utils::toHex(32, false), 64);
+  arrSize = Utils::padLeft(Utils::toHex(bV.size(), false), 64);
   for (std::string b : bV) {
     if (b == "true") b = "1";
     else if (b == "false") b = "0";
@@ -177,16 +177,16 @@ std::string Solidity::packBoolArray(const std::vector<std::string> bV) {
 std::string Solidity::packBytesArray(const std::vector<std::string> hexV) {
   std::string arrOffset, arrSize = "";
   std::vector<std::string> hexStrip, hexOffset, hexLength, hexData = {};
-  arrOffset = Utils::padLeft(Utils::toHex(32), 64);
-  arrSize = Utils::padLeft(Utils::toHex(hexV.size()), 64);
+  arrOffset = Utils::padLeft(Utils::toHex(32, false), 64);
+  arrSize = Utils::padLeft(Utils::toHex(hexV.size(), false), 64);
   int totalPaddings = 0;
   for (int i = 0; i < hexV.size(); i++) {
     std::string hS, hO, hL, hD = "";
     int padding = 0;
     hS = Utils::stripHexPrefix(hexV[i]);
     if (hS.length() % 2 != 0) hS.insert(0, "0");  // Complete odd bytes ("aaa" = "0aaa")
-    hL = Utils::toHex(hS.length() / 2); // Get length first so we can get the right offset
-    hO = Utils::toHex((32 * hexV.size()) + (32 * i) + (32 * totalPaddings)); // (offsets) + (lengths) + (datas)
+    hL = Utils::toHex(hS.length() / 2, false); // Get length first so we can get the right offset
+    hO = Utils::toHex((32 * hexV.size(), false) + (32 * i) + (32 * totalPaddings)); // (offsets) + (lengths) + (datas)
     do { padding += 64; } while (padding < hS.length());
     totalPaddings += padding / 64;
     hD = Utils::padRight(hS, padding);
@@ -206,15 +206,15 @@ std::string Solidity::packBytesArray(const std::vector<std::string> hexV) {
 std::string Solidity::packStringArray(const std::vector<std::string> strV) {
   std::string arrOffset, arrSize = "";
   std::vector<std::string> strStrip, strOffset, strLength, strData = {};
-  arrOffset = Utils::padLeft(Utils::toHex(32), 64);
-  arrSize = Utils::padLeft(Utils::toHex(strV.size()), 64);
+  arrOffset = Utils::padLeft(Utils::toHex(32, false), 64);
+  arrSize = Utils::padLeft(Utils::toHex(strV.size(), false), 64);
   int totalPaddings = 0;
   for (int i = 0; i < strV.size(); i++) {
     std::string sS, sO, sL, sD = "";
     int padding = 0;
     sS = Utils::stripHexPrefix(Utils::utf8ToHex(strV[i]));
-    sL = Utils::toHex(sS.length() / 2); // Get length first so we can get the right offset
-    sO = Utils::toHex((32 * strV.size()) + (32 * i) + (32 * totalPaddings)); // (offsets) + (lengths) + (datas)
+    sL = Utils::toHex(sS.length() / 2, false); // Get length first so we can get the right offset
+    sO = Utils::toHex((32 * strV.size()) + (32 * i) + (32 * totalPaddings), false); // (offsets) + (lengths) + (datas)
     do { padding += 64; } while (padding < sS.length());
     totalPaddings += padding / 64;
     sD = Utils::padRight(sS, padding);
@@ -229,6 +229,24 @@ std::string Solidity::packStringArray(const std::vector<std::string> strV) {
     ret += strLength[i] + strData[i];
   }
   return ret;
+}
+
+bool Solidity::isUInt(const std::string& type)
+{
+    return (
+      type == "uint8" ||type == "uint16" ||
+      type == "uint32" || type == "uint64" ||
+      type == "uint128" ||type == "uint256"
+    );
+}
+
+bool Solidity::isUIntArr(const std::string& type)
+{
+    return (
+      type == "uint8[]" ||type == "uint16[]" ||
+      type == "uint32[]" || type == "uint64[]" ||
+      type == "uint128[]" ||type == "uint256[]"
+    );
 }
 
 std::string Solidity::packMulti(const json& args, Error &err, const std::string& func) {
@@ -265,7 +283,7 @@ std::string Solidity::packMulti(const json& args, Error &err, const std::string&
     }
 
     // Parse value according to type
-    if (type == "uint256[]") {
+    if (isUIntArr(type)) {
       ret += packUintArray(value.get<std::vector<std::string>>());
     } else if (type == "address[]") {
       ret += packAddressArray(value.get<std::vector<std::string>>());
@@ -275,7 +293,7 @@ std::string Solidity::packMulti(const json& args, Error &err, const std::string&
       ret += packBytesArray(value.get<std::vector<std::string>>());
     } else if (type == "string[]") {
       ret += packStringArray(value.get<std::vector<std::string>>());
-    } else if (type == "uint256") {
+    } else if (isUInt(type)) {
       ret += packUint(value.get<std::string>());
     } else if (type == "address") {
       ret += packAddress(value.get<std::string>());
@@ -308,11 +326,11 @@ std::string Solidity::packMulti(const json& args, Error &err, const std::string&
       // Parse value according to type
       if (type.find("[") != std::string::npos) {  // Type is array
         std::string arrType = type.substr(0, type.find("["));
-        ret += Utils::padLeft(Utils::toHex(nextOffset), 64);  // Array offset
+        ret += Utils::padLeft(Utils::toHex(nextOffset, false), 64);  // Array offset
         if (arrType != "bytes" && arrType != "string") {
           nextOffset += 64 * arg.size();  // In chars
         }
-        if (arrType == "uint256") {
+        if (isUInt(arrType)) {
           arrToAppend += packUintArray(value.get<std::vector<std::string>>()).substr(64);
         } else if (arrType == "address") {
           arrToAppend += packAddressArray(value.get<std::vector<std::string>>()).substr(64);
@@ -327,14 +345,14 @@ std::string Solidity::packMulti(const json& args, Error &err, const std::string&
         }
       } else {  // Type is not array
         std::string val = value.get<std::string>();
-        if (type == "uint256") {
+        if (isUInt(type)) {
           ret += packUint(val);
         } else if (type == "address") {
           ret += packAddress(val);
         } else if (type == "bool") {
           ret += packBool(val);
         } else if (type == "bytes" || type == "string") {
-          ret += Utils::padLeft(Utils::toHex(nextOffset), 64);
+          ret += Utils::padLeft(Utils::toHex(nextOffset, false), 64);
           std::string packed = (type == "bytes")
             ? packBytes(value).substr(64) : packString(value).substr(64);
           nextOffset += 32 * (packed.length() / 64);

@@ -84,6 +84,21 @@ if(NOT SECP256K1_FOUND)
   find_package(Secp256k1)
 endif()
 
+find_package(Toolbox)
+if(NOT TOOLBOX_FOUND)
+  message(WARNING "Toolbox not found, compiling from source.")
+  include(ProjectToolbox)
+  find_package(Toolbox)
+endif()
+
+
+find_package(Bip3x)
+if(NOT BIP3X_FOUND)
+  message(WARNING "Bip3x not found, compiling from source.")
+  include(ProjectBip3x)
+  find_package(Bip3x)
+endif()
+
 find_package(BoostCertify)
 if (NOT BOOSTCERTIFY_FOUND)
   message(WARNING "BoostCertify not found, compiling from source.")
@@ -151,6 +166,8 @@ target_include_directories(${PROJECT_NAME} PRIVATE ${ETHASH_INCLUDE_DIR})
 target_include_directories(${PROJECT_NAME} PRIVATE ${SECP256K1_INCLUDE_DIR})
 target_include_directories(${PROJECT_NAME} PRIVATE ${CRYPTOPP_INCLUDE_DIR})
 target_include_directories(${PROJECT_NAME} PRIVATE ${SCRYPT_INCLUDE_DIR})
+target_include_directories(${PROJECT_NAME} PRIVATE ${TOOLBOX_INCLUDE_DIR})
+target_include_directories(${PROJECT_NAME} PRIVATE ${BIP3X_INCLUDE_DIR})
 
 target_include_directories(${PROJECT_NAME} PUBLIC
   $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>
@@ -160,7 +177,7 @@ target_include_directories(${PROJECT_NAME} PUBLIC
 # Link project to dependencies and external libraries
 target_link_libraries(${PROJECT_NAME} PUBLIC
   ${Boost_LIBRARIES} ${OPENSSL_LIBRARIES} nlohmann_json::nlohmann_json cryptopp scrypt
-  secp256k1 ${ETHASH_BYPRODUCTS} ethash
+  secp256k1 bip3x toolbox ${ETHASH_BYPRODUCTS} ethash
 )
 
 # For certify to work on MacOS

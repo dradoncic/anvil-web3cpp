@@ -6,3 +6,4 @@ include/web3cpp/version.h
 docs/
 deps/
 .cache
+.clang-format

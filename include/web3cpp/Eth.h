@@ -8,7 +8,6 @@
 
 #include <nlohmann/json.hpp>
 
-#include <web3cpp/Net.h>
 #include <web3cpp/Provider.h>
 #include <web3cpp/RPC.h>
 #include <web3cpp/Utils.h>

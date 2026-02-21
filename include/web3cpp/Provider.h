@@ -5,8 +5,10 @@
 #include <iostream>
 #include <mutex>
 #include <string>
+#include "Transport.h"
 
 #include <nlohmann/json.hpp>
+#include <boost/asio.hpp>
 
 using json = nlohmann::ordered_json;
 
@@ -43,6 +45,13 @@ class Provider {
     void _setData(json data);
     void setProvider(const Provider &p);
 
+    std::unique_ptr<boost::asio::io_context> ioc;
+    std::thread ioThread;
+
+    std::unique_ptr<Net::NetworkTransport> transport;
+
+    void _initalizeTransport();
+
   public:
     std::mutex mutable lock;  ///< Mutex to manage read/write access to the provider object.
 
@@ -78,7 +87,9 @@ class Provider {
     const std::string& getCurrency()    const { return this->currency; }        ///< Getter for provider currency.
     const std::string& getExplorerUrl() const { return this->explorerUrl; }  ///< Getter for provider block explorer URL.
     const static json& getPresets()           { return Provider::presets; }      ///< Getter for provider presets.
-    const std::string& getProtocol()     const { return this->protocol;  }       ///< Getter for the protocol.
+    const std::string& getProtocol()    const { return this->protocol;  }       ///< Getter for the protocol.
+
+   Net::NetworkTransport* getTransport()    const { return this->transport.get(); }
 
     friend class Web3;
 };

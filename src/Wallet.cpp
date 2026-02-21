@@ -1,4 +1,3 @@
-#include "web3cpp/Net.h"
 #include "web3cpp/RPC.h"
 #include "web3cpp/Utils.h"
 #include "web3cpp/ethcore/Common.h"
@@ -97,13 +96,13 @@ Wallet::Estimations Wallet::fetchEstimations(json& txObj)
         std::string rpcStr = RPC::eth_estimateGas(txObj, rpcErr).dump();
         if (rpcErr.getCode() != 0) return {dev::Invalid256, rpcErr.getCode()};
 
-        std::string req = Net::HTTPRequest(
-            this->provider, Net::RequestTypes::POST, rpcStr
-        );
-        json reqJson = json::parse(req);
+        auto transport = provider->getTransport();
+        json req = transport->send(
+            Net::RequestTypes::POST, rpcStr
+        ).get();
 
-        if (reqJson.contains("error")) return {dev::Invalid256, 36};
-        return {Utils::toBN(reqJson["result"].get<std::string>()), 0};
+        if (req.contains("error")) return {dev::Invalid256, 36};
+        return {Utils::toBN(req["result"].get<std::string>()), 0};
     });
 
     auto feeHistoryFut = std::async(std::launch::async, [this]() -> std::pair<json, int> {
@@ -113,13 +112,13 @@ Wallet::Estimations Wallet::fetchEstimations(json& txObj)
         ).dump();
 
         if (rpcErr.getCode() != 0) return {json{}, 36};
-        std::string req = Net::HTTPRequest(
-            this->provider, Net::RequestTypes::POST , rpcStr
-        );
-        json reqJson = json::parse(req);
 
-        if (reqJson.contains("error")) return {json{}, 36};
-        return {reqJson, 0};
+        auto transport = provider->getTransport();
+        json req = transport->send(
+            Net::RequestTypes::POST , rpcStr
+        ).get();
+        if (req.contains("error")) return {json{}, 36};
+        return {req, 0};
     });
 
     auto gasRes = estimatedGasFut.get();
@@ -207,15 +206,15 @@ std::future<json> Wallet::sendTransaction(std::string signedTx, Error &error)
             return txResult;
         }
 
-        std::string req = Net::HTTPRequest(this->provider, Net::RequestTypes::POST, rpcStr);
-        json reqJson = json::parse(req);
+        auto transport = provider->getTransport();
+        json req = transport->send(Net::RequestTypes::POST, rpcStr).get();
 
         txResult["signature"] = signedTx;
-        if (reqJson.contains("error")) {
-            txResult["error"] = reqJson;
+        if (req.contains("error")) {
+            txResult["error"] = req;
             error.setCode(13);
         } else {
-            txResult["result"] = reqJson["result"].get<std::string>();
+            txResult["result"] = req["result"].get<std::string>();
             error.setCode(0);
         }
         return txResult;
@@ -236,15 +235,15 @@ std::future<json> Wallet::dropTransaction(std::string transactionHash, Error &er
             return txResult;
         }
 
-        std::string req = Net::HTTPRequest(this->provider, Net::RequestTypes::POST, rpcStr);
-        json reqJson = json::parse(req);
+        auto transport = provider->getTransport();
+        json req = transport->send(Net::RequestTypes::POST, rpcStr).get();
 
         txResult["hash"] = transactionHash;
-        if (reqJson.contains("error")) {
-            txResult["error"] = reqJson;
+        if (req.contains("error")) {
+            txResult["error"] = req;
             error.setCode(37);
         } else {
-            txResult["result"] = reqJson["result"].get<std::string>();
+            txResult["result"] = req["result"].get<std::string>();
             error.setCode(0);
         }
         return txResult;

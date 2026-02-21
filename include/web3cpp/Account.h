@@ -6,7 +6,6 @@
 #include <vector>
 #include <memory>
 
-#include <web3cpp/Net.h>
 #include <web3cpp/Provider.h>
 #include <web3cpp/Utils.h>
 #include <web3cpp/RPC.h>

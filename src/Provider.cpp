@@ -1,5 +1,6 @@
 #include <web3cpp/Provider.h>
-#include "web3cpp/Http.h"
+#include <web3cpp/Http.h>
+#include "web3cpp/Websocket.h"
 
 json Provider::presets = {
   {"avax-c-main", {
@@ -74,5 +75,10 @@ void Provider::_initalizeTransport()
         transport = std::make_unique<Net::HttpTransport>(
             host, boost::lexical_cast<std::string>(port), target, protocol
         );
+    }
+    else if (protocol == "ws" || protocol == "wss") {
+      transport = std::make_unique<Net::WebSocketTransport>(
+        host, boost::lexical_cast<std::string>(port), target, protocol
+      );
     }
 }

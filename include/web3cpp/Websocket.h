@@ -71,9 +71,6 @@ class WebSocketTransport : public NetworkTransport
   /// Called when the TCP connection completes.
   void on_connect(beast::error_code ec);
 
-  /// Called when the SSL/TLS handshake completes.
-  void on_ssl_handshake(beast::error_code ec);
-
   /// Called when the WebSocket handshake completes.
   void on_handshake(beast::error_code ec);
 
@@ -99,8 +96,7 @@ class WebSocketTransport : public NetworkTransport
 
   net::io_context ioc_;
   std::thread io_thread_;
-  net::ssl::context ssl_ctx_;
-  websocket::stream<beast::ssl_stream<ip::tcp::socket>> ws_;
+  websocket::stream<ip::tcp::socket> ws_;
   ip::tcp::resolver resolver_;
   net::executor_work_guard<net::io_context::executor_type> work_guard_;
 

@@ -18,8 +18,7 @@ WebSocketTransport::WebSocketTransport(const std::string& host, const std::strin
     , target_{target}
     , protocol_{protocol}
     , work_guard_{net::make_work_guard(ioc_)}
-    , ssl_ctx_{net::ssl::context::tls_client}
-    , ws_(ioc_, ssl_ctx_)
+    , ws_(ioc_)
     , resolver_(ioc_)
 {
   // ssl_ctx.set_options(
@@ -149,7 +148,7 @@ void WebSocketTransport::on_resolve(beast::error_code ec, ip::tcp::resolver::res
     return;
   }
 
-  async_connect(ws_.next_layer().next_layer(), results.begin(), results.end(),
+  async_connect(ws_.next_layer(), results.begin(), results.end(),
                 [this](beast::error_code ec, auto) { on_connect(ec); });
 }
 
@@ -167,48 +166,6 @@ void WebSocketTransport::on_connect(beast::error_code ec)
     }
     return;
   }
-
-  if (!SSL_set_tlsext_host_name(ws_.next_layer().native_handle(), host_.c_str()))
-  {
-    beast::error_code ec_sni{static_cast<int>(::ERR_get_error()), net::error::get_ssl_category()};
-    try
-    {
-      connect_promise_.set_exception(
-          std::make_exception_ptr(std::runtime_error("sni failed: " + ec.message())));
-    }
-    catch (...)
-    {
-    }
-    return;
-  }
-
-  ws_.next_layer().async_handshake(net::ssl::stream_base::client,
-                                   [this](beast::error_code ec) { on_ssl_handshake(ec); });
-}
-
-void WebSocketTransport::on_ssl_handshake(beast::error_code ec)
-{
-  if (ec)
-  {
-    unsigned long ssl_err;
-    while ((ssl_err = ERR_get_error()) != 0)
-    {
-      char err_buf[256];
-      ERR_error_string_n(ssl_err, err_buf, sizeof(err_buf));
-      std::cerr << "OpenSSL error: " << err_buf << std::endl;
-    }
-
-    try
-    {
-      connect_promise_.set_exception(
-          std::make_exception_ptr(std::runtime_error("ssl handshake failed: " + ec.message())));
-    }
-    catch (...)
-    {
-    }
-    return;
-  }
-
   ws_.set_option(websocket::stream_base::timeout::suggested(beast::role_type::client));
 
   ws_.set_option(websocket::stream_base::decorator(
@@ -336,8 +293,8 @@ void WebSocketTransport::handle_disconnect()
   beast::error_code ec;
   ws_.close(websocket::close_code::abnormal);
   ws_.~stream();
-  new (&ws_) websocket::stream<beast::ssl_stream<ip::tcp::socket>>(
-      ioc_, ssl_ctx_);
+  new (&ws_) websocket::stream<ip::tcp::socket>(
+      ioc_);
 
   connect();
 }

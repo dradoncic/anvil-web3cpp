@@ -2,10 +2,84 @@
 
 include(CMakeFindDependencyMacro)
 
-# Only find dependencies that consumers need
-
 find_dependency(Boost REQUIRED COMPONENTS filesystem system thread)
 find_dependency(OpenSSL REQUIRED)
 find_dependency(nlohmann_json REQUIRED)
 
+set(_web3cpp_built_static @BUILD_STATIC@)
+
+if(_web3cpp_built_static)
+  list(PREPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/modules")
+
+  find_dependency(CryptoPP REQUIRED)
+  find_dependency(Scrypt REQUIRED)
+  find_dependency(Ethash REQUIRED)
+  find_dependency(Secp256k1 REQUIRED)
+  find_dependency(Toolbox REQUIRED)
+  find_dependency(Bip3x REQUIRED)
+
+  if(NOT TARGET cryptopp)
+    add_library(cryptopp UNKNOWN IMPORTED)
+    if(CRYPTOPP_LIBRARY)
+      set_target_properties(cryptopp PROPERTIES IMPORTED_LOCATION "${CRYPTOPP_LIBRARY}")
+    elseif(CRYPTOPP_LIBRARIES)
+      set_target_properties(cryptopp PROPERTIES IMPORTED_LOCATION "${CRYPTOPP_LIBRARIES}")
+    endif()
+    if(CRYPTOPP_INCLUDE_DIR)
+      set_target_properties(cryptopp PROPERTIES INTERFACE_INCLUDE_DIRECTORIES "${CRYPTOPP_INCLUDE_DIR}")
+    endif()
+  endif()
+
+  if(NOT TARGET scrypt)
+    add_library(scrypt UNKNOWN IMPORTED)
+    set_target_properties(scrypt PROPERTIES
+      IMPORTED_LOCATION "${SCRYPT_LIBRARY}"
+      INTERFACE_INCLUDE_DIRECTORIES "${SCRYPT_INCLUDE_DIR}"
+    )
+  endif()
+
+  if(NOT TARGET ethash)
+    add_library(ethash UNKNOWN IMPORTED)
+    set_target_properties(ethash PROPERTIES
+      IMPORTED_LOCATION "${ETHASH_LIBRARY}"
+      INTERFACE_INCLUDE_DIRECTORIES "${ETHASH_INCLUDE_DIR}"
+    )
+  endif()
+
+  if(NOT TARGET secp256k1)
+    add_library(secp256k1 UNKNOWN IMPORTED)
+    set_target_properties(secp256k1 PROPERTIES
+      IMPORTED_LOCATION "${SECP256K1_LIBRARY}"
+      INTERFACE_INCLUDE_DIRECTORIES "${SECP256K1_INCLUDE_DIR}"
+    )
+  endif()
+
+  if(NOT TARGET toolbox)
+    add_library(toolbox UNKNOWN IMPORTED)
+    set_target_properties(toolbox PROPERTIES
+      IMPORTED_LOCATION "${TOOLBOX_LIBRARY}"
+      INTERFACE_INCLUDE_DIRECTORIES "${TOOLBOX_INCLUDE_DIR}"
+    )
+  endif()
+
+  if(NOT TARGET bip3x)
+    add_library(bip3x UNKNOWN IMPORTED)
+    set_target_properties(bip3x PROPERTIES
+      IMPORTED_LOCATION "${BIP3X_LIBRARY}"
+      INTERFACE_INCLUDE_DIRECTORIES "${BIP3X_INCLUDE_DIR}"
+    )
+  endif()
+
+  # The ethash build also produces a keccak library that web3cpp links against.
+  # FindEthash sets KECCAK_LIBRARY for us.
+  if(KECCAK_LIBRARY AND NOT TARGET keccak)
+    add_library(keccak UNKNOWN IMPORTED)
+    set_target_properties(keccak PROPERTIES
+      IMPORTED_LOCATION "${KECCAK_LIBRARY}"
+    )
+  endif()
+endif()
+
 include("${CMAKE_CURRENT_LIST_DIR}/web3cppTargets.cmake")
+
+check_required_components(web3cpp)

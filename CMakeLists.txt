@@ -18,6 +18,7 @@ include(CablePackage)
 include(CableToolchains)
 include(CMakePackageConfigHelpers)
 include(CableBuildInfo)
+include(GNUInstallDirs)
 
 # Setup CXX
 
@@ -40,9 +41,6 @@ message("Using PIC: ${CMAKE_POSITION_INDEPENDENT_CODE}")
 message("Building as static: ${BUILD_STATIC}")
 message("Building tests: ${BUILD_TESTS}")
 
-# Fetch and set up external libraries
-# As this is a library, it checks if it is being a externalProject added with multiple DEPENDS
-# If it is, it doens't need to include the Project .cmake files, as the libraries are being brought by the parent project.
 include(CheckLibraryExists)
 if(BUILD_STATIC)
   set(OPENSSL_USE_STATIC_LIBS ON)
@@ -185,11 +183,19 @@ target_include_directories(${PROJECT_NAME} PUBLIC
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
 )
 
-# Link project to dependencies and external libraries
-target_link_libraries(${PROJECT_NAME} PUBLIC
-  ${Boost_LIBRARIES} ${OPENSSL_LIBRARIES} nlohmann_json::nlohmann_json cryptopp scrypt
-  secp256k1 bip3x toolbox ${ETHASH_BYPRODUCTS} ethash
-)
+if(BUILD_STATIC)
+  target_link_libraries(${PROJECT_NAME} PUBLIC
+    ${Boost_LIBRARIES} ${OPENSSL_LIBRARIES} nlohmann_json::nlohmann_json
+    cryptopp scrypt secp256k1 bip3x toolbox keccak ethash
+  )
+else()
+  target_link_libraries(${PROJECT_NAME} PUBLIC
+    ${Boost_LIBRARIES} ${OPENSSL_LIBRARIES} nlohmann_json::nlohmann_json
+  )
+  target_link_libraries(${PROJECT_NAME} PRIVATE
+    cryptopp scrypt secp256k1 bip3x toolbox keccak ethash
+  )
+endif()
 
 # For certify to work on MacOS
 if(APPLE)
@@ -227,10 +233,64 @@ install(TARGETS web3cpp
   PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
 )
 
+# Install web3cpp's own public headers
 install(
   DIRECTORY include/
   DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
 )
+
+set(_DEPS_PREFIX "${CMAKE_BINARY_DIR}/deps")
+
+# Headers from bip3x (referenced by Bip39.h, Wallet.h, devcore/FixedHash.h)
+install(
+  DIRECTORY "${_DEPS_PREFIX}/include/bip3x"
+  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+  OPTIONAL
+)
+
+# Headers from secp256k1 (referenced by Wallet.h)
+install(
+  FILES
+    "${_DEPS_PREFIX}/include/secp256k1.h"
+    "${_DEPS_PREFIX}/include/secp256k1_ecdh.h"
+    "${_DEPS_PREFIX}/include/secp256k1_recovery.h"
+  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+  OPTIONAL
+)
+
+# Headers from ethash (referenced by devcore/SHA3.h)
+install(
+  DIRECTORY "${_DEPS_PREFIX}/include/ethash"
+  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+  OPTIONAL
+)
+
+# Headers from cryptopp (used internally, but install in case consumers need them)
+install(
+  DIRECTORY "${_DEPS_PREFIX}/include/cryptopp"
+  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+  OPTIONAL
+)
+
+# Headers from toolbox / scrypt (used internally)
+install(
+  FILES "${_DEPS_PREFIX}/include/libscrypt.h"
+  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+  OPTIONAL
+)
+
+if(BUILD_STATIC)
+  install(
+    DIRECTORY "${_DEPS_PREFIX}/lib/"
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    OPTIONAL
+    FILES_MATCHING
+      PATTERN "*.a"
+      PATTERN "*.lib"
+      PATTERN "cmake" EXCLUDE
+      PATTERN "pkgconfig" EXCLUDE
+  )
+endif()
 
 install(
   EXPORT web3cppTargets
@@ -257,3 +317,16 @@ install(
     ${CMAKE_CURRENT_BINARY_DIR}/web3cppConfigVersion.cmake
   DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/web3cpp
 )
+
+if(BUILD_STATIC)
+  install(
+    FILES
+      ${CMAKE_CURRENT_SOURCE_DIR}/cmake/FindCryptoPP.cmake
+      ${CMAKE_CURRENT_SOURCE_DIR}/cmake/FindScrypt.cmake
+      ${CMAKE_CURRENT_SOURCE_DIR}/cmake/FindEthash.cmake
+      ${CMAKE_CURRENT_SOURCE_DIR}/cmake/FindSecp256k1.cmake
+      ${CMAKE_CURRENT_SOURCE_DIR}/cmake/FindToolbox.cmake
+      ${CMAKE_CURRENT_SOURCE_DIR}/cmake/FindBip3x.cmake
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/web3cpp/modules
+  )
+endif()

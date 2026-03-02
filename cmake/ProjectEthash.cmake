@@ -33,10 +33,18 @@ ExternalProject_Add(
     BUILD_BYPRODUCTS "${ETHASH_BYPRODUCTS}"
 )
 
-# Create imported library
-add_library(ethash STATIC IMPORTED GLOBAL)
+# Create imported library for keccak (ethash byproduct)
+add_library(keccak STATIC IMPORTED GLOBAL)
 file(MAKE_DIRECTORY "${ETHASH_INCLUDE_DIR}")  # Must exist.
+set_property(TARGET keccak PROPERTY IMPORTED_CONFIGURATIONS Release)
+set_property(TARGET keccak PROPERTY IMPORTED_LOCATION_RELEASE "${ETHASH_BYPRODUCTS}")
+set_property(TARGET keccak PROPERTY INTERFACE_INCLUDE_DIRECTORIES "${ETHASH_INCLUDE_DIR}")
+add_dependencies(keccak Ethash)
+
+# Create imported library for ethash
+add_library(ethash STATIC IMPORTED GLOBAL)
 set_property(TARGET ethash PROPERTY IMPORTED_CONFIGURATIONS Release)
 set_property(TARGET ethash PROPERTY IMPORTED_LOCATION_RELEASE "${ETHASH_LIBRARY}")
 set_property(TARGET ethash PROPERTY INTERFACE_INCLUDE_DIRECTORIES "${ETHASH_INCLUDE_DIR}")
-add_dependencies(ethash Ethash ${ETHASH_BYPRODUCTS})
+set_property(TARGET ethash PROPERTY INTERFACE_LINK_LIBRARIES keccak)
+add_dependencies(ethash Ethash keccak)

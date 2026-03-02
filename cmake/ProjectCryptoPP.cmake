@@ -4,6 +4,13 @@ if (MSVC)
   set(_only_release_configuration -DCMAKE_CONFIGURATION_TYPES=Release)
 endif()
 
+if(CMAKE_POSITION_INDEPENDENT_CODE)
+  set(_cryptopp_pic_flag "-fPIC")
+else()
+  set(_cryptopp_pic_flag "")
+endif()
+
+
 set(prefix "${CMAKE_BINARY_DIR}/deps")
 set(CRYPTOPP_ROOT_DIR "${prefix}")
 set(CRYPTOPP_LIBRARY "${prefix}/lib/${CMAKE_STATIC_LIBRARY_PREFIX}cryptopp${CMAKE_STATIC_LIBRARY_SUFFIX}")
@@ -20,7 +27,7 @@ ExternalProject_Add(
   BUILD_IN_SOURCE true
   CMAKE_ARGS -DNDEBUG
   CONFIGURE_COMMAND ""
-  BUILD_COMMAND make static PREFIX=${prefix} CXXFLAGS=-std=c++${CMAKE_CXX_STANDARD} -j8
+  BUILD_COMMAND make static PREFIX=${prefix} CXXFLAGS=-std=c++${CMAKE_CXX_STANDARD}\ ${_cryptopp_pic_flag} -j8
   INSTALL_COMMAND make install-lib PREFIX=${prefix}
   LOG_CONFIGURE 1
   LOG_BUILD 1

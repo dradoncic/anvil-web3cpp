@@ -28,6 +28,10 @@ cable_set_build_type(DEFAULT RelWithDebInfo CONFIGURATION_TYPES Debug;Release;Re
 project(web3cpp VERSION 0.0.1 DESCRIPTION "Custom implementation of Web3 in C++")
 cable_add_buildinfo_library(PROJECT_NAME web3cpp)
 set(BUILD_STATIC ON CACHE BOOL "Build library as static, turn off to build as shared")
+# When building as shared, enable PIC globally so all dependencies are compiled with -fPIC
+if(NOT BUILD_STATIC)
+  set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+endif()
 set(BUILD_TESTS ON CACHE BOOL "Build helper unit testing program")
 message("C++ Standard: ${CMAKE_CXX_STANDARD}")
 message("C++ Standard is required: ${CMAKE_CXX_STANDARD_REQUIRED}")
@@ -40,8 +44,15 @@ message("Building tests: ${BUILD_TESTS}")
 # As this is a library, it checks if it is being a externalProject added with multiple DEPENDS
 # If it is, it doens't need to include the Project .cmake files, as the libraries are being brought by the parent project.
 include(CheckLibraryExists)
-set(OPENSSL_USE_STATIC_LIBS ON)
-set(Boost_USE_STATIC_LIBS ON)
+if(BUILD_STATIC)
+  set(OPENSSL_USE_STATIC_LIBS ON)
+  set(Boost_USE_STATIC_LIBS ON)
+else()
+  set(OPENSSL_USE_STATIC_LIBS OFF)
+  set(Boost_USE_STATIC_LIBS OFF)
+endif()
+
+
 set(Boost_USE_MULTITHREADED ON)
 set(FETCHCONTENT_BASE_DIR "${CMAKE_BINARY_DIR}/deps") # "deps", not "_deps"
 find_package(Boost REQUIRED filesystem system thread)

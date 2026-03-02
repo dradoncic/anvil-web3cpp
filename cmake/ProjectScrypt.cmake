@@ -4,6 +4,12 @@ if (MSVC)
   set(_only_release_configuration -DCMAKE_CONFIGURATION_TYPES=Release)
 endif()
 
+if(CMAKE_POSITION_INDEPENDENT_CODE)
+  set(_scrypt_pic_flag "-fPIC")
+else()
+  set(_scrypt_pic_flag "")
+endif()
+
 set(prefix "${CMAKE_BINARY_DIR}/deps")
 set(SCRYPT_LIBRARY "${prefix}/lib/${CMAKE_STATIC_LIBRARY_PREFIX}scrypt${CMAKE_STATIC_LIBRARY_SUFFIX}")
 set(SCRYPT_INCLUDE_DIR "${prefix}/include")
@@ -16,7 +22,7 @@ ExternalProject_Add(
   UPDATE_DISCONNECTED true
   BUILD_IN_SOURCE true
   CONFIGURE_COMMAND ""
-  BUILD_COMMAND make PREFIX=${prefix}
+  BUILD_COMMAND make PREFIX=${prefix} CFLAGS=${_scrypt_pic_flag}
   INSTALL_COMMAND make install install-static PREFIX=${prefix}
   LOG_CONFIGURE 1
   LOG_BUILD 1
@@ -30,4 +36,3 @@ file(MAKE_DIRECTORY "${SCRYPT_INCLUDE_DIR}")  # Must exist.
 set_property(TARGET scrypt PROPERTY IMPORTED_CONFIGURATIONS Release)
 set_property(TARGET scrypt PROPERTY IMPORTED_LOCATION_RELEASE "${SCRYPT_LIBRARY}")
 set_property(TARGET scrypt PROPERTY INTERFACE_INCLUDE_DIRECTORIES "${SCRYPT_INCLUDE_DIR}")
-
